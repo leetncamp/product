@@ -8,5 +8,5 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^$', main, name="main")
+    url(r'^uploadproducthierarchy$', import_product_hierarchy, name="import_product_hierarchy"),
 )

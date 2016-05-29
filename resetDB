@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import os
+import base64
+from pdb import set_trace as debug
+import urllib
+
+
+#Reset the database
+from django.conf import settings
+from django.core.wsgi import get_wsgi_application
+os.environ['DJANGO_SETTINGS_MODULE'] = 'hierarchy.settings'
+application = get_wsgi_application()
+from django import setup
+try:
+    os.chdir(os.path.dirname(__file__))
+except OSError:
+    pass
+setup()
+from hierarchy.views import *
+
+
+from django.core.urlresolvers import reverse
+from django.test import Client
+
+
+
+
+commands = """rm db.sqlite3
+rm share/migrations/0*.py
+rm share/migrations/*.pyc
+rm salk/migrations/0*.py
+rm salk/migrations/*.pyc
+./manage.py makemigrations hierarchy
+./manage.py migrate"""
+
+
+for command in commands:
+    os.system(command)
+
+import pexpect
+p=base64.b64decode('MzE0MTU5MjZubi4=')
+child = pexpect.spawn("./manage.py createsuperuser --email lee@nips.cc")
+child.expect("Salk rolodex")
+child.sendline("\n")
+child.expect("Password")
+child.sendline(p)
+child.expect("Password")
+child.sendline(p)
