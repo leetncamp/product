@@ -1,0 +1,64 @@
+{% load bootstrap_themes %}
+{% load hierarchy_tags %}
+
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Product Hierarchy">
+
+  {% bootstrap_styles theme='cerulean' type='min.css' %}
+  <script src="/static/bower_components/jquery/dist/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<link rel="stylesheet" href="/static/hierarchy/css/hierarchy.css" type="text/css" media="screen">
+
+  {% bootstrap_script use_min=True %}
+  {% block head %}
+  <title>Base Site Title</title>
+  {% endblock %}
+
+</head>
+
+<body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand active" href="/"></a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+
+            <li class="{{aboutClass}}"><a href="/about"></a></li>
+			<li><a href="/admin/logout/?next=/"></a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+<br><br><br>
+	<div class="container">
+	    {% if messages %}
+	        {% for message in messages %}
+	            {% bootstrapalert message %}
+	        {% endfor %}
+	    {% endif %}
+	</div>
+
+
+{% block body %}
+
+
+{% endblock %}
+</body>
+</html>
+<head>
+
+
+
+<!--https://github.com/no-dice/django-bootstrap-themes-->
