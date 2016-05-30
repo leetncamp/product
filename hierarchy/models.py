@@ -113,7 +113,7 @@ class SubProductLine(models.Model):
         ws.cell(row=row, column=column).value = self.usage.name; column += 1
         ws.cell(row=row, column=column).value = self.igor_or_sub_pl; column += 1
         ws.cell(row=row, column=column).value = self.description; column += 1
-        ws.cell(row=row, column=column).value = self.description; column += 1
+        ws.cell(row=row, column=column).value = self.label; column += 1
         return()
 
 

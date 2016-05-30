@@ -39,7 +39,7 @@ def sap_full_string(x):
 
 class SubProductLineAdmin(admin.ModelAdmin):
     search_fields = ['igor_or_sub_pl', 'description']
-    list_display = ['id', 'description', "usage", "igorclass", 'igor_or_sub_pl', 'fproductline', sap_full_string ]
+    list_display = ['id', 'description', "usage", "igorclass", 'igor_or_sub_pl', 'label', 'fproductline', sap_full_string ]
     list_filter = ['igorclass']
 
 class CodeAdmin(admin.ModelAdmin):
