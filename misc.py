@@ -24,6 +24,8 @@ parser.add_argument("--igor-codes", action="store_true", help="Add igor codes")
 ns = parser.parse_args()
 
 
+
+
 if ns.igor_codes:
     codes = """1-INSTRUMENT
 3-CONSUMABLE
@@ -53,4 +55,4 @@ Y-SERVICE PACKAGE""".split("\n")
         igor, created = IgorItemClass.objects.get_or_create(name=split[0], description=split[1])
         if created:
             igor.save()
-        print
+    print("Loaded Igor Classes")

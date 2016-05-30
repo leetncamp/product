@@ -8,7 +8,7 @@ import urllib
 #Reset the database
 from django.conf import settings
 from django.core.wsgi import get_wsgi_application
-os.environ['DJANGO_SETTINGS_MODULE'] = 'hierarchy.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'project.settings'
 application = get_wsgi_application()
 from django import setup
 try:
@@ -26,23 +26,21 @@ from django.test import Client
 
 
 commands = """rm db.sqlite3
-rm share/migrations/0*.py
-rm share/migrations/*.pyc
-rm salk/migrations/0*.py
-rm salk/migrations/*.pyc
+rm hierarchy/migrations/0*.py
+rm hierarchy/migrations/*.pyc
 ./manage.py makemigrations hierarchy
-./manage.py migrate"""
+./manage.py migrate""".split("\n")
 
 
 for command in commands:
     os.system(command)
 
 import pexpect
-p=base64.b64decode('MzE0MTU5MjZubi4=')
-child = pexpect.spawn("./manage.py createsuperuser --email lee@nips.cc")
-child.expect("Salk rolodex")
-child.sendline("\n")
-child.expect("Password")
-child.sendline(p)
-child.expect("Password")
-child.sendline(p)
+
+#child = pexpect.spawn("./manage.py createsuperuser --username lee --email lee@product.com")
+os.system("./manage.py createsuperuser --username lee --email lee@product.com")
+os.system("./misc.py --igor")
+#child.expect("Password")
+#child.sendline("123")
+#child.expect("Password")
+#child.sendline("123")

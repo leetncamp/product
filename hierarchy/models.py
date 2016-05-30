@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from pdb import set_trace as debug
+
 
 # Create your models here.
 
@@ -21,22 +24,47 @@ class Segment(Parent):
     pass
 
 class Division(Parent):
-    pass
+    fsegment = models.ForeignKey(Segment)
 
 class BusinessUnit(Parent):
-    pass
+    fdivision = models.ForeignKey(Division)
 
 class SubBusinessUnit(Parent):
-    pass
+    fbusinessunit = models.ForeignKey(BusinessUnit)
 
 class ProductLineGroup(Parent):
-    pass
+    fsubbusinessunit = models.ForeignKey(SubBusinessUnit)
 
 class ProductLine(Parent):
-    pass
+    fproductlinegroup = models.ForeignKey(ProductLineGroup)
 
-class SubProductLine(Parent):
-    pass
+class SubProductLine(models.Model):
+    segmentDict = { "GSX": "J", "CSX":"L", "MBS":"K", "FRT":"B", "MSJ":"N" }
+    description = models.CharField(max_length=30)
+    igor_or_sub_pl = models.CharField(max_length=3)
+    fproductline = models.ForeignKey(ProductLine)
+
+    def __unicode__(self):
+        return(u"{0}- {1}".format(self.igor_or_sub_pl, self.description))
+
+    def sapfullstring(self):
+        debug()
+        productline = self.fproductline
+        productlinegroup = productline.fproductlinegroup
+        subbusinessunit =  productlinegroup.fsubbusinessunit
+        businessunit = subbusinessunit.fbusinessunit
+        division = businessunit.fdivision
+        segment = division.fsegment
+
+        #=IF($B2="GSX","J",IF($B2="CSX","L",IF($B2="MBS","K",IF($B2="FRT","B",IF($B2="MSJ","N","#")))))&$H2&$K2&$N2&$Q2&$S2&$U2
+        result = segmentDict.get(segment.code, "#")
+        result = u"".format(result)
+        result += businessunit.code
+        result += subbusinessunit.code
+        result += productlinegroup.code
+        result += productline.code
+        return(result)
+
 
 class IgorItemClass(models.Model):
     name = models.CharField(max_length=1)
@@ -44,6 +72,12 @@ class IgorItemClass(models.Model):
 
     def __unicode__(self):
         return(u"{0}-{1}".format(self.name, self.description))
+
+class Usage(models.Model):
+    name = models.CharField(max_length=64)
+
+    def __unicode__(self):
+        return(u"{0}".format(self.name))
 
 class ProductHierarchy(models.Model):
     date = models.DateTimeField()
