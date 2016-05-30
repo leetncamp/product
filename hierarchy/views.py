@@ -16,9 +16,6 @@ class SubProductForm(forms.Form):
 class ProductForm(forms.Form):
     product = forms.FileField()
 
-
-
-
 def new(request):
     subproductform = SubProductForm()
     productform = ProductForm()
@@ -150,3 +147,27 @@ def import_product_hierarchy(request):
 
 
     return( render(request, 'hierarchy/import_product_hierarchy.html', locals() ))
+
+def download_product_hierarchy(request):
+    spls = SubProductLine.objects.all()
+    #We also need to get ProductLines that don't have a subproduct
+    debug()
+    pls = ProductLine.objects.exclude()
+    wb = Workbook()
+    ws = wb.active
+    column = 1
+    for header in bigheaders:
+        ws.cell(row=1, column=column).value = header
+        column += 1
+    tmp = NamedTemporaryFile(suffix=".xlsx")
+    row = 2
+    for spl in spls:
+        spl.excel_row(ws, row)
+        row += 1
+        print(".")
+    wb.save(tmp)
+    tmp.seek(0)
+    response = HttpResponse(content_type='application/xlsx')
+    response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+    response.write(tmp.read())
+    return(response)

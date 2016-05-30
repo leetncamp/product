@@ -1,0 +1,16 @@
+{% extends "hierarchy/base.html" %}
+{% block head %}<title>Download Product Hierarchy</title>
+{% block body %}
+<div class="container"
+
+  <p>
+    This may not get used. 
+  </p>
+  <form method="POST"  enctype="multipart/form-data">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+
+</div>
+{% endblock %}

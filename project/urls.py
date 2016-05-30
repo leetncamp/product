@@ -1,14 +1,11 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from django.contrib import admin
 from hierarchy.views import *
 
-urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'project.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
-
+urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^uploadproducthierarchy$', import_product_hierarchy, name="import_product_hierarchy"),
     url(r'^new$', new, name="new"),
     url(r'^$', new),
-)
+    url(r'^downloadproducthierarchy/{0,1}$', download_product_hierarchy, name="download_product_hierarchy" ),
+    ]
