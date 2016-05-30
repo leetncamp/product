@@ -1,0 +1,10 @@
+Django==1.9.6
+PyInstaller==3.2
+django-bootstrap==0.2.4
+django-bootstrap-themes==3.3.6
+et-xmlfile==1.0.1
+jdcal==1.2
+openpyxl==2.3.5
+pexpect==4.1.0
+ptyprocess==0.5.1
+wsgiref==0.1.2
