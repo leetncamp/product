@@ -12,7 +12,8 @@ def main(request):
 
 
 
-
+def requestnew(request):
+    return(render(request, "hierarchy/requestnew.html", locals()))
 
 class UploadFileForm(forms.Form):
     file = forms.FileField()
@@ -55,14 +56,32 @@ def import_product_hierarchy(request):
                     if created:
                         productline.save()
                     usage, created = Usage.objects.get_or_create(name=rowDict["Usage"])
-
                     if created:
                         usage.save()
+
+                    igorclassStr = rowDict.get("Igor Item Class")
+                    if igorclassStr:
+                        igorclass = IgorItemClass.objects.get(name=igorclassStr)
+                    else:
+                        igorclass = None
+
+                    usageStr = rowDict.get("Usage")
+                    if usageStr:
+                        usage = Usage.objects.get(name=usageStr)
+                    else:
+                        usage = None
 
                     if rowDict["Igor or Sub PL"]:
                         subproductline, created = SubProductLine.objects.get_or_create(igor_or_sub_pl=rowDict["Igor or Sub PL"], description=rowDict['Igor / Sub PL Description'], fproductline=productline)
                         if created:
                             subproductline.save()
+                    else:
+                        subproductline = None
+
+                    producthierarchy, created = ProductHierarchy.objects.get_or_create(pl=productline, subpl=subproductline, usage=usage, igorclass=igorclass)
+                    if created:
+                        producthierarchy.save()
+
                     print row[0].row
                 except Exception as e:
                     print traceback.format_exc()

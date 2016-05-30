@@ -44,11 +44,11 @@ class SubProductLine(models.Model):
     igor_or_sub_pl = models.CharField(max_length=3)
     fproductline = models.ForeignKey(ProductLine)
 
+
     def __unicode__(self):
         return(u"{0}- {1}".format(self.igor_or_sub_pl, self.description))
 
     def sapfullstring(self):
-        debug()
         productline = self.fproductline
         productlinegroup = productline.fproductlinegroup
         subbusinessunit =  productlinegroup.fsubbusinessunit
@@ -57,7 +57,7 @@ class SubProductLine(models.Model):
         segment = division.fsegment
 
         #=IF($B2="GSX","J",IF($B2="CSX","L",IF($B2="MBS","K",IF($B2="FRT","B",IF($B2="MSJ","N","#")))))&$H2&$K2&$N2&$Q2&$S2&$U2
-        result = segmentDict.get(segment.code, "#")
+        result = self.segmentDict.get(segment.code, "#")
         result = u"".format(result)
         result += businessunit.code
         result += subbusinessunit.code
@@ -80,4 +80,16 @@ class Usage(models.Model):
         return(u"{0}".format(self.name))
 
 class ProductHierarchy(models.Model):
-    date = models.DateTimeField()
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    subpl = models.ForeignKey(SubProductLine, blank=True, null=True)
+    pl = models.ForeignKey(ProductLine)
+    igorclass = models.ForeignKey(IgorItemClass, blank=True, null=True)
+    usage = models.ForeignKey(Usage, blank=True, null=True)
+
+class Code(models.Model):
+    code = models.CharField(max_length=3)
+    used = models.BooleanField(default=False, blank=True)
+
+    def __unicode__(self):
+        return(self.code)

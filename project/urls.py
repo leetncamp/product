@@ -9,4 +9,5 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^uploadproducthierarchy$', import_product_hierarchy, name="import_product_hierarchy"),
+    url(r'^requestnew$', requestnew, name="requestnew"),
 )

@@ -38,6 +38,13 @@ class SubProductLineAdmin(admin.ModelAdmin):
     search_fields = ['igor_or_sub_pl', 'description']
     list_display = ['id', 'description', 'igor_or_sub_pl', 'fproductline', lambda x:x.sapfullstring() ]
 
+class ProductHierarchyAdmin(admin.ModelAdmin):
+    search_fields = ['igor_or_sub_pl', 'description']
+    list_display = ['id', 'subpl', 'pl', 'igorclass', "usage" ]
+
+class CodeAdmin(admin.ModelAdmin):
+    search_fields = ["code"]
+    list_filter = ['used']
 
 
 # Now register the new UserAdmin...
@@ -50,3 +57,5 @@ admin.site.register(ProductLine, ProductLineAdmin)
 admin.site.register(IgorItemClass, IgorItemClassAdmin)
 admin.site.register(Usage, UsageAdmin)
 admin.site.register(SubProductLine, SubProductLineAdmin)
+admin.site.register(ProductHierarchy, ProductHierarchyAdmin)
+admin.site.register(Code, CodeAdmin)

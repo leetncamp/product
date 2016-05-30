@@ -39,7 +39,7 @@ import pexpect
 
 #child = pexpect.spawn("./manage.py createsuperuser --username lee --email lee@product.com")
 os.system("./manage.py createsuperuser --username lee --email lee@product.com")
-os.system("./misc.py --igor")
+os.system("./misc.py --codes")
 #child.expect("Password")
 #child.sendline("123")
 #child.expect("Password")
