@@ -71,7 +71,7 @@ class SubProductLine(models.Model):
     def __unicode__(self):
         return(u"{0}- {1}".format(self.igor_or_sub_pl, self.description))
 
-    def sapfullstring(self):
+    def get_hierarchy(self):
         productline = self.fproductline
         productlinegroup = productline.fproductlinegroup
         subbusinessunit =  productlinegroup.fsubbusinessunit
@@ -88,8 +88,13 @@ class SubProductLine(models.Model):
         result += productline.code
         return(segment, division, businessunit, subbusinessunit, productlinegroup, productline, result)
 
+    def sapfullstring(self):
+        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result = self.get_hierarchy()
+        return(result)
+
+
     def excel_row(self, ws, row):
-        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result = self.sapfullstring()
+        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result = self.get_hierarchy()
         column = 1
         ws.cell(row=row, column=column).value = segment.label; column += 1
         ws.cell(row=row, column=column).value = segment.code; column += 1
@@ -109,15 +114,23 @@ class SubProductLine(models.Model):
         ws.cell(row=row, column=column).value = productline.label; column += 1
         ws.cell(row=row, column=column).value = productline.code; column += 1
         ws.cell(row=row, column=column).value = productline.name; column += 1
-        ws.cell(row=row, column=column).value = self.igorclass.name; column += 1
+        if self.igorclass:
+            ws.cell(row=row, column=column).value = self.igorclass.name; column += 1
+        else:
+            column += 1
         ws.cell(row=row, column=column).value = self.usage.name; column += 1
         ws.cell(row=row, column=column).value = self.igor_or_sub_pl; column += 1
         ws.cell(row=row, column=column).value = self.description; column += 1
         ws.cell(row=row, column=column).value = self.label; column += 1
+        column += 3
+        if self.igorclass:
+            ws.cell(row=row, column=column).value = result; column += 1
         return()
 
 
 class Code(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
     code = models.CharField(max_length=3)
     used = models.BooleanField(default=False, blank=True)
 

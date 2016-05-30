@@ -73,12 +73,14 @@ def new(request):
             response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
             response.write(tmp.read())
             return(response)
+    newClass = "active"
     return(render(request, "hierarchy/new.html", locals()))
 
 class UploadFileForm(forms.Form):
     file = forms.FileField()
 
 def import_product_hierarchy(request):
+    uploadClass = "active"
     form = UploadFileForm()
     if request.method == "POST":
         if request.FILES:
