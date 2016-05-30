@@ -34,13 +34,13 @@ class IgorItemClassAdmin(admin.ModelAdmin):
 class UsageAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
+def sap_full_string(x):
+    return(x.sapfullstring())
+
 class SubProductLineAdmin(admin.ModelAdmin):
     search_fields = ['igor_or_sub_pl', 'description']
-    list_display = ['id', 'description', 'igor_or_sub_pl', 'fproductline', lambda x:x.sapfullstring() ]
-
-class ProductHierarchyAdmin(admin.ModelAdmin):
-    search_fields = ['igor_or_sub_pl', 'description']
-    list_display = ['id', 'subpl', 'pl', 'igorclass', "usage" ]
+    list_display = ['id', 'description', "usage", "igorclass", 'igor_or_sub_pl', 'fproductline', sap_full_string ]
+    list_filter = ['igorclass']
 
 class CodeAdmin(admin.ModelAdmin):
     search_fields = ["code"]
@@ -57,5 +57,4 @@ admin.site.register(ProductLine, ProductLineAdmin)
 admin.site.register(IgorItemClass, IgorItemClassAdmin)
 admin.site.register(Usage, UsageAdmin)
 admin.site.register(SubProductLine, SubProductLineAdmin)
-admin.site.register(ProductHierarchy, ProductHierarchyAdmin)
 admin.site.register(Code, CodeAdmin)

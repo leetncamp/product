@@ -1,19 +1,79 @@
 from django.shortcuts import render
 from django import forms
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from hierarchy.models import *
 import traceback
 from django.db import IntegrityError
+from django import forms
+from tempfile import NamedTemporaryFile
+from django.http import HttpResponse
+import os
 
 
-def main(request):
-    ick = "this"
-    return( render(request, 'hierarchy/main.html', locals() ))
+class SubProductForm(forms.Form):
+    subproduct = forms.FileField()
+
+class ProductForm(forms.Form):
+    product = forms.FileField()
 
 
 
-def requestnew(request):
-    return(render(request, "hierarchy/requestnew.html", locals()))
+
+def new(request):
+    subproductform = SubProductForm()
+    productform = ProductForm()
+    if request.method == "POST":
+        if request.POST.get("select", "") == "subproduct":
+            wb = load_workbook(request.FILES['subproduct'])
+            ws = wb.active
+            headers = [cell.value for cell in ws.rows[0] ]
+            subprods=[]
+            for row in ws.rows[1:]:
+                rowDict = {}
+                for cellnum in range(len(row) + 1):
+                    try:
+                        cell = row[cellnum]
+                        rowDict[headers[cellnum]] = cell.value
+                    except IndexError:
+                        pass
+                productline = ProductLine.objects.get(code=rowDict.get("Existing Product Line Code"))
+                code = get_unused_code()
+                description = rowDict.get("Igor / Sub PL Description", "")
+                usage = rowDict.get("Usage")
+                if usage:
+                    usage = Usage.objects.get(name=usage)
+                igoritemclass = rowDict.get("Igor Item Class", None)
+                if igoritemclass:
+                    igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
+                subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
+                    igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
+                if created:
+                    subproductline.save()
+                    subprods.append(subproductline)
+                    code.used = True
+                    code.save()
+
+
+            wb = Workbook()
+            ws = wb.active
+            count=1
+            tmp = NamedTemporaryFile(suffix=".xlsx")
+            for header in bigheaders:
+                ws.cell(row=1, column=count).value= header
+                count += 1
+            count = 2
+
+            for subprod in subprods:
+                subprod.excel_row(ws, count)
+                count += 1
+            wb.save(tmp)
+            tmp.flush()
+            tmp.seek(0)
+            response = HttpResponse(content_type='application/xlsx')
+            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+            response.write(tmp.read())
+            return(response)
+    return(render(request, "hierarchy/new.html", locals()))
 
 class UploadFileForm(forms.Form):
     file = forms.FileField()
@@ -72,15 +132,12 @@ def import_product_hierarchy(request):
                         usage = None
 
                     if rowDict["Igor or Sub PL"]:
-                        subproductline, created = SubProductLine.objects.get_or_create(igor_or_sub_pl=rowDict["Igor or Sub PL"], description=rowDict['Igor / Sub PL Description'], fproductline=productline)
+                        subproductline, created = SubProductLine.objects.get_or_create(igor_or_sub_pl=rowDict["Igor or Sub PL"], \
+                            description=rowDict['Igor / Sub PL Description'], fproductline=productline, usage=usage, igorclass=igorclass)
                         if created:
                             subproductline.save()
                     else:
                         subproductline = None
-
-                    producthierarchy, created = ProductHierarchy.objects.get_or_create(pl=productline, subpl=subproductline, usage=usage, igorclass=igorclass)
-                    if created:
-                        producthierarchy.save()
 
                     print row[0].row
                 except Exception as e:
