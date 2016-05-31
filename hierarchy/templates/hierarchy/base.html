@@ -13,6 +13,7 @@
 	<link rel="stylesheet" href="/static/hierarchy/css/hierarchy.css" type="text/css" media="screen">
 
   {% bootstrap_script use_min=True %}
+  {% include "hierarchy/editable-snippet.html" %}
   {% block head %}
   <title>Base Site Title</title>
   {% endblock %}
@@ -55,9 +56,9 @@
         </form>-->
         <ul class="nav navbar-nav navbar-right">
           {% if request.user.is_authenticated %}
-            <li><a href="/admin/logout/?next=/"><span class="glyphicon glyphicon-log-out"></span></a></li>
+            <li title="logout"><a href="/admin/logout/?next=/"><span class="glyphicon glyphicon-log-out"></span></a></li>
           {% else %}
-            <li><a href="/admin/login/?next=/"><span class="glyphicon glyphicon-log-in"></span></a></li>
+            <li title="logout"><a href="/admin/login/?next=/"><span class="glyphicon glyphicon-log-in"></span></a></li>
           {% endif %}
 
           <li class="dropdown">
@@ -92,6 +93,16 @@
 
 
 {% endblock %}
+<div class="container"
+  {% if request.user.is_superuser %}
+    <div id="editFooter" class="noprint">
+        <br><br><br><br>
+            <button class="editFooterButton btn btn-default" title="Enable editing of content where possible" id="editpage" onclick="start_edit();"><span class="glyphicon glyphicon-edit"></span></button>
+            <button class="editFooterButton btn btn-default" title="Save edited content and reload the page" id="noeditpage" onclick="stop_edit();" style="display:none"><span class="glyphicon glyphicon-floppy-disk"></span></button>
+    </div>
+  {% endif %}
+</div>
+
 </body>
 </html>
 <head>

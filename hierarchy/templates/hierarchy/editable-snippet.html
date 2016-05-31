@@ -1,0 +1,162 @@
+
+<link rel="stylesheet" href="/static/hierarchy/alohaeditor/aloha/css/aloha.css" type="text/css">
+<script src="/static/hierarchy/alohaeditor/aloha/lib/require.js" type="text/javascript"></script>
+<script src="/static/hierarchy/alohaeditor/aloha/lib/vendor/jquery-1.7.2.js" type="text/javascript"></script>
+
+
+<!-- load the Aloha Editor core and some plugins -->
+<script>
+     var Aloha = window.Aloha || ( window.Aloha = {} );
+
+     Aloha.settings = {
+         plugins: {
+             format: { config : [ "table","strong", "em" ,"u","del", "s", "p", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "removeFormat"] }
+         },
+         sidebar: { disabled: true }
+     };
+ </script>
+
+<script src="/static/hierarchy/alohaeditor/aloha/lib/aloha.js" type="text/javascript"
+data-aloha-plugins="common/ui,
+                     common/format,
+                     common/list,
+                     common/table,
+                     common/link,
+                     common/highlighteditables,
+                     common/align,
+                     common/autoparagraph"
+></script>
+
+<!-- load the Aloha Editor CSS styles -->
+<link rel="stylesheet" href="/static/hierarchy/alohaeditor/aloha/css/aloha.css" type="text/css" media="screen">
+
+
+<!-- make all elements with class="editable" editable with Aloha Editor -->
+<script type="text/javascript">
+       Aloha.ready( function() {
+
+              var ajq = Aloha.jQuery;
+              //Save a pointer to Aloha's jquery becuase it has
+              //lots of the jquery ui in it that we might need later.
+              window.jqAloha = Aloha.jQuery;
+              //Aloha.jQuery('.editable').aloha();
+       });
+</script>
+
+<script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
+<!--/static/salk/bower_components/jquery/dist/jquery.min.js-->
+
+<script>
+
+Aloha.jQuery("#nopageedit").hide();
+function start_edit(){
+
+    //At the beginning of an edit, we need to replace the content of the
+    //editable div with it's databased content in order to preserve the
+    //template tags.
+
+    Aloha.jQuery(".editable").each(function(index){
+        var myself = this;
+        var id = this.id;
+        var request = Aloha.jQuery.ajax({
+    				url: "{% url 'aloha' %}",
+    				type: "POST",
+    				data: {
+    					id : id,
+              csrfmiddlewaretoken: csrftoken
+    				},
+    				dataType: "html"
+    			})
+        request.done(function(msg){
+            //msg is returned with quotes around it. Strip those off.
+            myself.innerHTML = msg.slice(1,-1);
+
+        })
+    })
+
+    Aloha.jQuery('.editable').aloha();
+    window.status.bold();
+    window.status = "Click outside the editable area to save. Changes are LIVE!! Refresh page to discard changes.";
+    Aloha.jQuery("#editpage").hide();
+    Aloha.jQuery("#noeditpage").show();
+
+}
+function stop_edit(){
+    Aloha.jQuery('.editable').mahalo();
+    window.status = "Editing Disabled";
+    Aloha.jQuery("#noeditpage").hide();
+    Aloha.jQuery("#editpage").show();
+    location.reload();
+
+}
+</script>
+<script>
+    Aloha.ready(function() {
+    	Aloha.require( ['aloha', 'aloha/jquery'], function( Aloha, jQuery) {
+
+    		// save all changes after leaving an editable
+    		Aloha.bind('aloha-editable-deactivated', function(){
+    			var content = Aloha.activeEditable.getContents();
+    			var contentId = Aloha.activeEditable.obj[0].id;
+          var originalContent = Aloha.activeEditable.originalContent;
+    			// textarea handling -- html id is "xy" and will be "xy-aloha" for the aloha editable
+    			if ( contentId.match(/-alohaAloha.jQuery/gi) ) {
+    				contentId = contentId.replace( /-aloha/gi, '' );
+    			}
+    			var request = jQuery.ajax({
+    				url: "{% url 'aloha' %}",
+    				type: "POST",
+    				data: {
+    					content : content,
+              originalContent: originalContent,
+    					contentId : contentId,
+              csrfmiddlewaretoken: csrftoken
+    				},
+            success: function(data){
+                if (data['message']){
+                    alert(data['message']);
+                }
+
+            },
+            error: function(xqXHR, textStatus){
+                window.status = textStatus;
+            }
+
+    			});
+
+    		});
+
+    	});
+    });
+</script>
+
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+var csrftoken = getCookie('csrftoken');
+
+function csrfSafeMethod(method) {
+    // these HTTP methods do not require CSRF protection
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+    }
+});
+</script>

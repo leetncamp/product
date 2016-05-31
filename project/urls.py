@@ -8,4 +8,5 @@ urlpatterns = [
     url(r'^new$', new, name="new"),
     url(r'^$', new),
     url(r'^downloadproducthierarchy/{0,1}$', download_product_hierarchy, name="download_product_hierarchy" ),
+    url(r'^aloha$', aloha, name="aloha"),
     ]

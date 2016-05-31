@@ -8,6 +8,7 @@ from django import forms
 from tempfile import NamedTemporaryFile
 from django.http import HttpResponse
 import os, sys
+from django.contrib import messages
 
 
 class SubProductForm(forms.Form):
@@ -175,3 +176,47 @@ def download_product_hierarchy(request):
     response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
     response.write(tmp.read())
     return(response)
+
+def aloha(request):
+
+    """Ajax calls to save edited documents"""
+
+    data = {"message":"Unknown Error"}
+
+    if request.is_ajax():
+        if request.user.is_superuser or userCanEdit:
+            site = get_current_site(request)
+            userCanEdit = request.user.groups.filter(name="CanEdit").exists()
+            contentId = request.POST.get(u'contentId')
+            content = request.POST.get(u'content')
+            docModelStr = contentId.split("-")[0]
+            docId = contentId.split("-")[1]
+            if contentId and content and docModelStr and docId:
+
+                """write this document to it's html file on disk, and eventually put it back to the dropbox folder."""
+                #First do a security check on the docModelStr to make sure it's a model name before evaling it.
+                if not docModelStr in modelNames:
+                    return(JsonResponse({"message":"bad model"}))
+                #Currently we only accept HTMLFile objects so let's further restrict.s
+                if not docModelStr == "HTMLFile":
+                    return(JsonResponse({"message":"bad model"}))
+                docModel = eval(docModelStr)
+                try:
+                    doc = docModel.objects.get(pk=docId)
+                except docModel.DoesNotExist:
+                    return({"message":"Document not found. Save aborted."})
+
+                open(doc.get_absolute_filepath(), "wb").write(content.encode('utf-8'))
+                try:
+                    doc.save()
+                except Exception as e:
+                    log.warning(traceback.format_exc)
+                log.info(u"User {0} updated {1} with id {2}. Ondisk it is {3}".format(request.user, docModelStr, doc.id, doc.get_absolute_filepath()))
+                data['message'] = u"{0} saved.".format(doc.filename)
+                data = {}  #Don't pop up any window.
+            else:
+                data = {"message":"missing a required component. These are required: contentId and content and \
+                    docModelStr and docId "}
+    else:
+        data = {"message":"API"}
+    return(JsonResponse(data))
