@@ -73,6 +73,16 @@ def new(request):
             response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
             response.write(tmp.read())
             return(response)
+    elif request.method == "GET":
+        download = request.GET.get("download")
+        if download in ["sub-product-template.xlsx", "product-template.xlsx"]:
+            filepath = os.path.join(settings.BASE_DIR, "hierarchy", "static", "hierarchy", "downloads", download)
+            response = HttpResponse(content_type="application/xlsx")
+            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(download)
+            spreadsheet = open(filepath, 'rb').read()
+            response.write(spreadsheet)
+            return(response)
+
     newClass = "active"
     return(render(request, "hierarchy/new.html", locals()))
 
