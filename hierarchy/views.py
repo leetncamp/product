@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django import forms
 from tempfile import NamedTemporaryFile
 from django.http import HttpResponse
-import os
+import os, sys
 
 
 class SubProductForm(forms.Form):
@@ -149,10 +149,7 @@ def import_product_hierarchy(request):
     return( render(request, 'hierarchy/import_product_hierarchy.html', locals() ))
 
 def download_product_hierarchy(request):
-    spls = SubProductLine.objects.all()
-    #We also need to get ProductLines that don't have a subproduct
-    debug()
-    pls = ProductLine.objects.exclude()
+    productlines = ProductLine.objects.all().order_by("id")
     wb = Workbook()
     ws = wb.active
     column = 1
@@ -161,10 +158,17 @@ def download_product_hierarchy(request):
         column += 1
     tmp = NamedTemporaryFile(suffix=".xlsx")
     row = 2
-    for spl in spls:
-        spl.excel_row(ws, row)
-        row += 1
-        print(".")
+    for pl in productlines:
+        spls = pl.subproductline_set.all()
+        if spls:
+            for spl in spls:
+                spl.excel_row(ws, row)
+                row += 1
+        else:
+            pl.excel_row(ws, row)
+            row += 1
+        print("."),
+        sys.stdout.flush()
     wb.save(tmp)
     tmp.seek(0)
     response = HttpResponse(content_type='application/xlsx')

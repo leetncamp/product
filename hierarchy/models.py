@@ -37,6 +37,59 @@ class ProductLineGroup(Parent):
 class ProductLine(Parent):
     fproductlinegroup = models.ForeignKey(ProductLineGroup)
 
+    def get_hierarchy(self):
+        productlinegroup = self.fproductlinegroup
+        subbusinessunit =  productlinegroup.fsubbusinessunit
+        businessunit = subbusinessunit.fbusinessunit
+        division = businessunit.fdivision
+        segment = division.fsegment
+
+        #=IF($B2="GSX","J",IF($B2="CSX","L",IF($B2="MBS","K",IF($B2="FRT","B",IF($B2="MSJ","N","#")))))&$H2&$K2&$N2&$Q2&$S2&$U2
+        result = segmentDict.get(segment.code, "#")
+        result = u"".format(result)
+        result += businessunit.code
+        result += subbusinessunit.code
+        result += productlinegroup.code
+        return(segment, division, businessunit, subbusinessunit, productlinegroup, result)
+
+    def sapfullstring(self):
+        #I don't think this method is needed. You don't calculate sapfullstring on produclines; only on subproductlines
+        segment, division, businessunit, subbusinessunit, productlinegroup, result = self.get_hierarchy()
+        return(result)
+
+    def excel_row(self, ws, row):
+        segment, division, businessunit, subbusinessunit, productlinegroup, result = self.get_hierarchy()
+        column = 1
+        ws.cell(row=row, column=column).value = segment.label; column += 1
+        ws.cell(row=row, column=column).value = segment.code; column += 1
+        ws.cell(row=row, column=column).value = segment.name; column += 1
+        ws.cell(row=row, column=column).value = division.label; column += 1
+        ws.cell(row=row, column=column).value = division.code; column += 1
+        ws.cell(row=row, column=column).value = division.name; column += 1
+        ws.cell(row=row, column=column).value = businessunit.label; column += 1
+        ws.cell(row=row, column=column).value = businessunit.code; column += 1
+        ws.cell(row=row, column=column).value = businessunit.name; column += 1
+        ws.cell(row=row, column=column).value = subbusinessunit.label; column += 1
+        ws.cell(row=row, column=column).value = subbusinessunit.code; column += 1
+        ws.cell(row=row, column=column).value = subbusinessunit.name; column += 1
+        ws.cell(row=row, column=column).value = productlinegroup.label; column += 1
+        ws.cell(row=row, column=column).value = productlinegroup.code; column += 1
+        ws.cell(row=row, column=column).value = productlinegroup.name; column += 1
+        ws.cell(row=row, column=column).value = self.label; column += 1
+        ws.cell(row=row, column=column).value = self.code; column += 1
+        ws.cell(row=row, column=column).value = self.name; column += 1
+        #if self.igorclass:
+        #    ws.cell(row=row, column=column).value = self.igorclass.name; column += 1
+        #else:
+        #    column += 1
+        ws.cell(row=row, column=column).value = "-"; column += 1
+        ws.cell(row=row, column=column).value = "-"; column += 1
+        ws.cell(row=row, column=column).value = "-"; column += 1
+        ws.cell(row=row, column=column).value = "-"; column += 1
+        return()
+
+
+
 class IgorItemClass(models.Model):
     name = models.CharField(max_length=1)
     description = models.CharField(max_length=64)
