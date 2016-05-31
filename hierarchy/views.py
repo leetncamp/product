@@ -141,11 +141,14 @@ def import_product_hierarchy(request):
                     else:
                         subproductline = None
 
-                    print row[0].row
+                    print("."),
+                    sys.stdout.flush()
+
                 except Exception as e:
                     print traceback.format_exc()
                     print("Error on row {0}".format(row[0].row))
                     debug()
+            messages.success(request, "Product Hierarchy Loaded")
 
 
 

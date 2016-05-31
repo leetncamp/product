@@ -13,6 +13,7 @@
       {% csrf_token %}
       {{subproductform.as_p}}
       <input type="hidden" name="select" value="subproduct" />
+      <br />
       <button class="btn btn-primary">Submit</button>
     </form>
 
@@ -21,6 +22,7 @@
       {% csrf_token %}
       {{productform.as_p}}
       <input type="hidden" name="select" value="product" />
+      <br />
       <button class="btn btn-primary">Submit</button>
     </form>
 
