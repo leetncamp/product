@@ -4,23 +4,26 @@
 {% block body %}
 <div class="container">
 
-  {% editable_document "new_intro" %}
 
-<br />
-  <form method="POST"  enctype="multipart/form-data">
-    {% csrf_token %}
-    {{subproductform.as_p}}
-    <input type="hidden" name="select" value="subproduct" />
-    <button class="btn btn-primary">Submit</button>
-  </form>
 
-<br /><br /><br />
-  <form method="POST"  enctype="multipart/form-data">
-    {% csrf_token %}
-    {{productform.as_p}}
-    <input type="hidden" name="select" value="product" />
-    <button class="btn btn-primary">Submit</button>
-  </form>
+    {% editable_document "new_intro" %}
+
+    <br />
+    <form method="POST"  enctype="multipart/form-data">
+      {% csrf_token %}
+      {{subproductform.as_p}}
+      <input type="hidden" name="select" value="subproduct" />
+      <button class="btn btn-primary">Submit</button>
+    </form>
+
+    <br /><br /><br />
+    <form method="POST"  enctype="multipart/form-data">
+      {% csrf_token %}
+      {{productform.as_p}}
+      <input type="hidden" name="select" value="product" />
+      <button class="btn btn-primary">Submit</button>
+    </form>
+
 
 
 </div>
