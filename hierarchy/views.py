@@ -6,9 +6,11 @@ import traceback
 from django.db import IntegrityError
 from django import forms
 from tempfile import NamedTemporaryFile
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import os, sys
 from django.contrib import messages
+from django.conf import settings
+
 
 
 class SubProductForm(forms.Form):
@@ -184,39 +186,30 @@ def aloha(request):
     data = {"message":"Unknown Error"}
 
     if request.is_ajax():
-        if request.user.is_superuser or userCanEdit:
-            site = get_current_site(request)
-            userCanEdit = request.user.groups.filter(name="CanEdit").exists()
+        if request.user.is_superuser:
+            #This happens when the editing fairy loads the raw template rather than  the rendered template before editing.
+            contentId = request.POST.get('id')
+            if contentId:
+                templatepath = os.path.join(settings.BASE_DIR, "hierarchy", "templates", "hierarchy", "editable", u"{0}.html".format(contentId))
+                try:
+                    html = open(templatepath, 'rb').read().decode("utf-8")
+                except IOError:
+                    html = u""
+                return(HttpResponse(html))
+
+            #This happens when the editing fairy is saving a document.
             contentId = request.POST.get(u'contentId')
             content = request.POST.get(u'content')
-            docModelStr = contentId.split("-")[0]
-            docId = contentId.split("-")[1]
-            if contentId and content and docModelStr and docId:
+            templatepath = os.path.join(settings.BASE_DIR, "hierarchy", "templates", "hierarchy", "editable", u"{0}.html".format(contentId))
+            if contentId and content:
 
-                """write this document to it's html file on disk, and eventually put it back to the dropbox folder."""
-                #First do a security check on the docModelStr to make sure it's a model name before evaling it.
-                if not docModelStr in modelNames:
-                    return(JsonResponse({"message":"bad model"}))
-                #Currently we only accept HTMLFile objects so let's further restrict.s
-                if not docModelStr == "HTMLFile":
-                    return(JsonResponse({"message":"bad model"}))
-                docModel = eval(docModelStr)
-                try:
-                    doc = docModel.objects.get(pk=docId)
-                except docModel.DoesNotExist:
-                    return({"message":"Document not found. Save aborted."})
+                """write this document to it's html file on disk."""
 
-                open(doc.get_absolute_filepath(), "wb").write(content.encode('utf-8'))
-                try:
-                    doc.save()
-                except Exception as e:
-                    log.warning(traceback.format_exc)
-                log.info(u"User {0} updated {1} with id {2}. Ondisk it is {3}".format(request.user, docModelStr, doc.id, doc.get_absolute_filepath()))
-                data['message'] = u"{0} saved.".format(doc.filename)
+                file(templatepath, 'wb').write(content.encode("utf-8"))
+                print(u"User {0} updated html file {1}".format(request.user, templatepath))
                 data = {}  #Don't pop up any window.
             else:
-                data = {"message":"missing a required component. These are required: contentId and content and \
-                    docModelStr and docId "}
+                data = {}
     else:
         data = {"message":"API"}
-    return(JsonResponse(data))
+    return(JsonResponse(data, safe=False))

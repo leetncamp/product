@@ -35,12 +35,14 @@ def bootstrapalert(message):
 
 @register.simple_tag()
 def editable_document(htmlfilename):
+    if not htmlfilename.endswith(".html"):
+        htmlfilename += ".html"
     templatepath = os.path.join(settings.BASE_DIR, "hierarchy", "templates", "hierarchy", "editable", htmlfilename)
     try:
-        html = open(templatepath, "rb").decode("utf-8")
+        html = open(templatepath, "rb").read().decode("utf-8")
     except IOError:
         html = u""
-    id = slugify(htmlfilename)
+    id = slugify(os.path.splitext(htmlfilename)[0])
     template = get_template("hierarchy/editable.html")
     renderedhtml = template.render(locals())
     safehtml = mark_safe(renderedhtml)

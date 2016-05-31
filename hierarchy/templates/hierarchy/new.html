@@ -3,9 +3,9 @@
 {% block head %}<title>New</title>{% endblock %}
 {% block body %}
 <div class="container">
-  blahick
-  {% editable_document "new_intro.html" %}
-  var
+
+  {% editable_document "new_intro" %}
+
 <br />
   <form method="POST"  enctype="multipart/form-data">
     {% csrf_token %}
