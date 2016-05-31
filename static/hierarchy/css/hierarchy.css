@@ -1,3 +1,18 @@
 .navbar-default {
   border-radius: 0px !important;
 }
+
+
+#editFooter {
+    position:fixed;
+    bottom:0;
+    width:205px;
+    left:0;
+    height:140px;   /* Height of the footer */
+    padding:20px;
+    padding-left:35px;
+    background-image:url('/static/hierarchy/img/fairy1.gif');
+    background-size: 130px;
+    background-repeat: no-repeat;
+    z-index:5;
+}
