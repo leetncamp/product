@@ -82,7 +82,8 @@ class ProductLine(Parent):
         #    ws.cell(row=row, column=column).value = self.igorclass.name; column += 1
         #else:
         #    column += 1
-        ws.cell(row=row, column=column).value = "-"; column += 1
+        ws.cell(row=row, column=column).value = "-"; column += 1 #Igorlass column
+        ws.cell(row=row, column=column).value = "-"; column += 1 #Usage column
         ws.cell(row=row, column=column).value = "-"; column += 1
         ws.cell(row=row, column=column).value = "-"; column += 1
         ws.cell(row=row, column=column).value = "-"; column += 1
