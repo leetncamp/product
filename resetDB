@@ -37,10 +37,6 @@ for command in commands:
 
 import pexpect
 
-#child = pexpect.spawn("./manage.py createsuperuser --username lee --email lee@product.com")
-os.system("./manage.py createsuperuser --username lee --email lee@product.com")
-os.system("./misc.py --codes")
-#child.expect("Password")
-#child.sendline("123")
-#child.expect("Password")
-#child.sendline("123")
+
+os.system("""echo "from django.contrib.auth.models import User; User.objects.create_superuser('lee@salk.edu', 'lee@salk.edu', '31415926nn.')" | python manage.py shell""")
+print
