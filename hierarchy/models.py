@@ -17,9 +17,15 @@ class Parent(models.Model):
         return(u"{0}- {1}".format(self.code, self.name))
 
     def save(self, *args, **kwargs):
+        msg=u""
+        self.name = self.name.upper()
+        if len(self.name) > 30:
+            msg = u"Name too long: {0}".format(self.name)
+            self.name = self.name[:30]
         if not self.label:
             self.label = u"{0}- {1}".format(self.code, self.name)
         super(Parent, self).save(*args, **kwargs)
+        return(msg)
 
 class Segment(Parent):
     pass
@@ -173,7 +179,7 @@ class SubProductLine(models.Model):
 
 
     def excel_row(self, ws, row):
-        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result = self.get_hierarchy()
+        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result, lowersapresult = self.get_hierarchy()
         column = 1
         ws.cell(row=row, column=column).value = segment.label; column += 1
         ws.cell(row=row, column=column).value = segment.code; column += 1
@@ -202,8 +208,14 @@ class SubProductLine(models.Model):
         ws.cell(row=row, column=column).value = self.description; column += 1
         ws.cell(row=row, column=column).value = self.label; column += 1
         column += 3
+
+        #SAP Full Hierarchy String
+        #SAP Lower Level string
+
         if self.igorclass:
             ws.cell(row=row, column=column).value = result; column += 1
+            ws.cell(row=row, column=column).value = lowersapresult; column += 1
+
         return()
 
 
