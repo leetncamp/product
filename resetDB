@@ -37,6 +37,5 @@ for command in commands:
 
 import pexpect
 
-
-os.system("""echo "from django.contrib.auth.models import User; User.objects.create_superuser('lee@salk.edu', 'lee@salk.edu', '31415926nn.')" | python manage.py shell""")
+os.system("./manage.py loaddata hierarchy/fixtures/auth.json")
 print
