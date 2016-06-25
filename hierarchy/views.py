@@ -75,6 +75,78 @@ def new(request):
             response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
             response.write(tmp.read())
             return(response)
+        elif request.POST.get('select') == "product":
+            wb = load_workbook(request.FILES['product'])
+            ws = wb.active
+            headers = [cell.value for cell in ws.rows[0] ]
+            prods=[]
+            rowDictList = []
+            for row in ws.rows[1:]:
+                rowDict = {}
+                for cellnum in range(len(row) + 1):
+                    try:
+                        cell = row[cellnum]
+                        rowDict[headers[cellnum]] = cell.value
+                    except IndexError:
+                        pass
+                rowDictList.append(rowDict)
+
+            """All product lines of the same name within a product line request should have the same Igor code, otherwise, crash."""
+            productLineGroupIgorDict = {}
+            for rowDict in rowDictList:
+                productLineGroupIgorDict[rowDict["Product Line Name"]] = productLineGroupIgorDict.get(rowDict["Product Line Name"], []) + [rowDict["Igor Item Class"]]
+            for plName, igorCodeList in productLineGroupIgorDict.iteritems():
+                if len(set(igorCodeList)) > 1:
+                    newClass = "active"
+                    messages.warning(request, u"Igor Item Classes differ for identical Product Line Name: {0}. Aborting...".format(plName))
+                    return(render(request, "hierarchy/new.html", locals()))
+            for rowDict in rowDictList:
+                productline = ProductLineGroup.objects.get(code=rowDict.get("Existing Product Line Group Code"))
+                code = get_unused_code()
+                description = rowDict.get("Igor / Sub PL Description", "")
+                usage = rowDict.get("Usage")
+                if usage:
+                    usage = Usage.objects.get(name=usage)
+                igoritemclass = rowDict.get("Igor Item Class", None)
+                if igoritemclass:
+                    igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
+
+                """Product line names are not unique in the database, but we don't want to create multiple product lines
+                with the same description withing a single new product line request. """
+
+
+
+                subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
+                    igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
+                if created:
+                    msg = subproductline.save()
+                    if msg:
+                        messages.warning(request, msg)
+                    subprods.append(subproductline)
+                    code.used = True
+                    code.save()
+
+
+            wb = Workbook()
+            ws = wb.active
+            count=1
+            tmp = NamedTemporaryFile(suffix=".xlsx")
+            for header in bigheaders:
+                ws.cell(row=1, column=count).value= header
+                count += 1
+            count = 2
+
+            for subprod in subprods:
+                subprod.excel_row(ws, count)
+                count += 1
+            wb.save(tmp)
+            tmp.flush()
+            tmp.seek(0)
+            response = HttpResponse(content_type='application/xlsx')
+            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+            response.write(tmp.read())
+            return(response)
+
     elif request.method == "GET":
         download = request.GET.get("download")
         if download in ["sub-product-template.xlsx", "product-template.xlsx"]:
@@ -159,7 +231,7 @@ def import_product_hierarchy(request):
                 except Exception as e:
                     print traceback.format_exc()
                     print("Error on row {0}".format(row[0].row))
-                    debug()
+                    stop()
             messages.success(request, "Product Hierarchy Loaded")
 
 
