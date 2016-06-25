@@ -226,8 +226,16 @@ class Code(models.Model):
     code = models.CharField(max_length=3)
     used = models.BooleanField(default=False, blank=True)
 
+    def use(self):
+        if not self.used:
+            self.used = True
+            self.save()
+            print(u"{0} is  marked as used".format(self.code))
+
+
     def __unicode__(self):
         return(self.code)
+
 
 def get_unused_code(description=None):
     code = Code.objects.filter(used=False)[0]

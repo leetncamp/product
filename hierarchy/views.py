@@ -52,8 +52,7 @@ def new(request):
                     if msg:
                         messages.warning(request, msg)
                     subprods.append(subproductline)
-                    code.used = True
-                    code.save()
+                    code.use()
 
 
             wb = Workbook()
@@ -91,7 +90,7 @@ def new(request):
                         pass
                 rowDictList.append(rowDict)
 
-            """All product lines of the same name within a product line request should have the same Igor code, otherwise, crash."""
+            """All product lines of the same name within a product line request should have the same Igor code, otherwise, abort."""
             productLineGroupIgorDict = {}
             for rowDict in rowDictList:
                 productLineGroupIgorDict[rowDict["Product Line Name"]] = productLineGroupIgorDict.get(rowDict["Product Line Name"], []) + [rowDict["Igor Item Class"]]
@@ -100,31 +99,50 @@ def new(request):
                     newClass = "active"
                     messages.warning(request, u"Igor Item Classes differ for identical Product Line Name: {0}. Aborting...".format(plName))
                     return(render(request, "hierarchy/new.html", locals()))
+
+            newProductLines = [] #List of ID's
             for rowDict in rowDictList:
-                productline = ProductLineGroup.objects.get(code=rowDict.get("Existing Product Line Group Code"))
+                productlinegroup = ProductLineGroup.objects.get(code=rowDict.get("Existing Product Line Group Code"))
                 code = get_unused_code()
-                description = rowDict.get("Igor / Sub PL Description", "")
+                igorDescription = rowDict.get("Igor / Sub PL Description", "")
                 usage = rowDict.get("Usage")
+                productlinename = rowDict.get("Product Line Name")
                 if usage:
                     usage = Usage.objects.get(name=usage)
                 igoritemclass = rowDict.get("Igor Item Class", None)
                 if igoritemclass:
                     igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
 
-                """Product line names are not unique in the database, but we don't want to create multiple product lines
-                with the same description withing a single new product line request. """
+                """Product line names are not unique in the database, but we don't want to create multiple product lines with the same
+                description within a single new product line request. Check if we've created one in this new productline request,
+                and if not create a new one. """
 
-
-
-                subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
-                    igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
-                if created:
-                    msg = subproductline.save()
-                    if msg:
-                        messages.warning(request, msg)
-                    subprods.append(subproductline)
-                    code.used = True
-                    code.save()
+                try:
+                    productLine = ProductLine.objects.get(id__in=newProductLines, name = productlinename)
+                except ProductLine.DoesNotExist:
+                    code = get_unused_code()
+                    productline = ProductLine(
+                        code = code,
+                        name = productlinename,
+                        fproductlinegroup = productlinegroup
+                    )
+                    productline.save()
+                    code.use()
+                    newProductLines.append(productline.id)
+                #Now we have a new productline
+                code = get_unused_code()
+                subproductline = SubProductLine(
+                    fproductline=productline,
+                    igor_or_sub_pl=code.code,
+                    description=description,
+                    igorclass=igoritemclass,
+                    usage=usage
+                )
+                msg = subproductline.save()
+                if msg:
+                    messages.warning(request, msg)
+                subprods.append(subproductline)
+                code.use()
 
 
             wb = Workbook()
@@ -136,8 +154,8 @@ def new(request):
                 count += 1
             count = 2
 
-            for subprod in subprods:
-                subprod.excel_row(ws, count)
+            for productline in newProductLines:
+                productline.excel_row(ws, count)
                 count += 1
             wb.save(tmp)
             tmp.flush()
