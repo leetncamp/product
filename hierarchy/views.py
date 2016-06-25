@@ -48,7 +48,9 @@ def new(request):
                 subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
                     igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
                 if created:
-                    subproductline.save()
+                    msg = subproductline.save()
+                    if msg:
+                        messages.warning(request, msg)
                     subprods.append(subproductline)
                     code.used = True
                     code.save()

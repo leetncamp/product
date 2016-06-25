@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from pdb import set_trace as debug
 
+class DescriptionTooLong(Exception): pass
+
 bigheaders = [u'Segment Label', u'Segment Code', u'Segment Name', u'Division Label', u'Division Code', u'Division Name', u'Business Unit Label', u'Business Unit Code', u'Business Unit Name', u'Sub-Business Unit Label', u'Sub-Business Unit Code', u'Sub-Business Unit Name', u'Product Line Group Label', u'Product Line Group Code', u'Product Line Group Name', u'Product Line Label', u'Product Line Code', u'Product Line Name', u'Igor Item Class', u'Usage', u'Igor or Sub PL', u'Igor / Sub PL Description', u'Sub-PL Label', u'Date', u'Notes1', u'Requestor', u'SAP Full Hierarchy String', u'SAP Lower Level string',]
 
 class Parent(models.Model):
@@ -54,11 +56,11 @@ class ProductLine(Parent):
 
     def sapfullstring(self):
         #I don't think this method is needed. You don't calculate sapfullstring on produclines; only on subproductlines
-        segment, division, businessunit, subbusinessunit, productlinegroup, result = self.get_hierarchy()
+        segment, division, businessunit, subbusinessunit, productlinegroup, result, lowersapresult = self.get_hierarchy()
         return(result)
 
     def excel_row(self, ws, row):
-        segment, division, businessunit, subbusinessunit, productlinegroup, result = self.get_hierarchy()
+        segment, division, businessunit, subbusinessunit, productlinegroup, result, lowersapresult = self.get_hierarchy()
         column = 1
         ws.cell(row=row, column=column).value = segment.label; column += 1
         ws.cell(row=row, column=column).value = segment.code; column += 1
@@ -105,7 +107,9 @@ class Usage(models.Model):
         return(u"{0}".format(self.name))
 
 
-segmentDict = { "GSX": "J", "CSX":"L", "MBS":"K", "FRT":"B", "MSJ":"N" }
+segmentDict = { "GSX": "J", "CSX":"L", "MBS":"K", "FRT":"B", "MSJ":"N", "ZZZ":"X" }
+
+
 
 class SubProductLine(models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -118,9 +122,17 @@ class SubProductLine(models.Model):
     label = models.CharField(max_length=64, blank=True, default="")
 
     def save(self, *args, **kwargs):
+        msg = u""
+        self.description = self.description.upper()
+
+        if len(self.description) > 30:
+            self.description = self.description[:30]
+            msg = u"SubProductLine description too long"
+
         if not self.label:
             self.label = u"{0}- {1}".format(self.igor_or_sub_pl, self.description)
         super(SubProductLine, self).save(*args, **kwargs)
+        return(msg)
 
     def __unicode__(self):
         return(u"{0}- {1}".format(self.igor_or_sub_pl, self.description))
@@ -132,19 +144,32 @@ class SubProductLine(models.Model):
         businessunit = subbusinessunit.fbusinessunit
         division = businessunit.fdivision
         segment = division.fsegment
+        igorclass = self.igorclass.name if self.igorclass else u""
 
         #=IF($B2="GSX","J",IF($B2="CSX","L",IF($B2="MBS","K",IF($B2="FRT","B",IF($B2="MSJ","N","#")))))&$H2&$K2&$N2&$Q2&$S2&$U2
+        #Lower sap string
+        #=IF($B2="GSX","J",IF($B2="CSX","L",IF($B2="MBS","K",IF($B2="FRT","B",IF($B2="MSJ","N","#")))))&$H2&$K2&$N2
+
+
         result = segmentDict.get(segment.code, "#")
-        result = u"".format(result)
         result += businessunit.code
         result += subbusinessunit.code
         result += productlinegroup.code
+        lowersapresult = result
         result += productline.code
-        return(segment, division, businessunit, subbusinessunit, productlinegroup, productline, result)
+        result += igorclass
+        result += self.igor_or_sub_pl
+
+        return(segment, division, businessunit, subbusinessunit, productlinegroup, productline, result, lowersapresult)
 
     def sapfullstring(self):
-        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result = self.get_hierarchy()
+        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result, lowersapresult = self.get_hierarchy()
         return(result)
+
+    def saplowerstring(self):
+        segment, division, businessunit, subbusinessunit, productlinegroup, productline, result, lowersapresult = self.get_hierarchy()
+        return(saplowerresult)
+
 
 
     def excel_row(self, ws, row):
