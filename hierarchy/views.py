@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse
 import os, sys
 from django.contrib import messages
 from django.conf import settings
+import base64
 
 
 
@@ -22,6 +23,7 @@ class ProductForm(forms.Form):
 def new(request):
     newcodes = []
     subproductform = SubProductForm()
+    download = "false"
     productform = ProductForm()
     if request.method == "POST":
         if request.POST.get("select", "") == "subproduct":
@@ -53,7 +55,7 @@ def new(request):
                     if msg:
                         messages.warning(request, msg)
                     subprods.append(subproductline)
-                    code.use()
+                    code.use(newcodes)
 
 
             wb = Workbook()
@@ -70,11 +72,15 @@ def new(request):
                 count += 1
             wb.save(tmp)
             tmp.flush()
+            #tmp.seek(0)
+            #response = HttpResponse(content_type='application/xlsx')
+            #response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+            #response.write(tmp.read())
+            #return(response)
             tmp.seek(0)
-            response = HttpResponse(content_type='application/xlsx')
-            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
-            response.write(tmp.read())
-            return(response)
+            request.session['download'] = tmp.read()
+            download = "true"
+
         elif request.POST.get('select') == "product":
             wb = load_workbook(request.FILES['product'])
             ws = wb.active
@@ -129,7 +135,7 @@ def new(request):
                         fproductlinegroup = productlinegroup
                     )
                     productline.save()
-                    code.use()
+                    code.use(newcodes)
                     newProductLines.append(productline.id)
                 #Now we have a new productline
                 code = get_unused_code()
@@ -144,7 +150,7 @@ def new(request):
                 if msg:
                     messages.warning(request, msg)
                 subprods.append(subproductline)
-                code.use()
+                code.use(newcodes)
 
 
             wb = Workbook()
@@ -161,11 +167,13 @@ def new(request):
                 count += 1
             wb.save(tmp)
             tmp.flush()
+            #tmp.seek(0)
+            #response = HttpResponse(content_type='application/xlsx')
+            #response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+            #response.write(tmp.read())
+            #return(response)
             tmp.seek(0)
-            response = HttpResponse(content_type='application/xlsx')
-            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
-            response.write(tmp.read())
-            return(response)
+            request.session['download'] = base64.b64encode(tmp.read())
 
     elif request.method == "GET":
         download = request.GET.get("download")
@@ -175,6 +183,13 @@ def new(request):
             response['Content-Disposition'] = 'attachment; filename="{0}"'.format(download)
             spreadsheet = open(filepath, 'rb').read()
             response.write(spreadsheet)
+            return(response)
+        retrieve = "retrieve" in request.GET.keys()
+        if retrieve:
+            xlsx = base64.b64decode(request.session['download'])
+            response = HttpResponse(content_type='application/xlsx')
+            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename("productcodes.xlsx"))
+            response.write(xlsx)
             return(response)
 
     newClass = "active"

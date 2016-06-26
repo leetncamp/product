@@ -1,6 +1,14 @@
 {% extends "hierarchy/base.html" %}
 {% load hierarchy_tags %}
-{% block head %}<title>New</title>{% endblock %}
+{% block head %}
+  <title>New</title>
+  <style>
+    td {
+      padding-left:5px;
+      padding-right:5px;
+    }
+  </style>
+{% endblock %}
 {% block body %}
 <div class="container">
 
@@ -24,7 +32,30 @@
       <button class="btn btn-primary">Submit</button>
     </form>
 
+  {% if newcodes %}
+  <br /><br />
+    <table>
+      <caption><strong>Codes Used</strong></caption>
+      {% for codelist in newcodes %}
+        <tr>
+          {% for column in codelist %}
+            <td>{{column}}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+    <br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br />
+    <script>
+      document.location = "/?retrieve"
+    </script>
 
+  {% endif %}
+
+
+  <br /><br /><br /><br /><br />
+  <br /><br /><br /><br /><br />
 
 </div>
+
 {% endblock %}

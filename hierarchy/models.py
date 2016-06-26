@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from pdb import set_trace as debug
+import datetime
 stop=debug
 
 class DescriptionTooLong(Exception): pass
@@ -19,7 +20,7 @@ class Parent(models.Model):
 
     def save(self, *args, **kwargs):
         msg=u""
-        self.name = self.name.upper()
+        self.name = unicode(self.name).upper()
         if len(self.name) > 30:
             msg = u"Name too long: {0}".format(self.name)
             self.name = self.name[:30]
@@ -122,6 +123,7 @@ class SubProductLine(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     description = models.CharField(max_length=30)
+    #Note that is is not a  ForeignKey for code for some reason.
     igor_or_sub_pl = models.CharField(max_length=3)
     fproductline = models.ForeignKey(ProductLine)
     igorclass = models.ForeignKey(IgorItemClass, blank=True, null=True)
@@ -130,7 +132,7 @@ class SubProductLine(models.Model):
 
     def save(self, *args, **kwargs):
         msg = u""
-        self.description = self.description.upper()
+        self.description = unicode(self.description).upper()
 
         if len(self.description) > 30:
             self.description = self.description[:30]
@@ -226,17 +228,32 @@ class Code(models.Model):
     code = models.CharField(max_length=3)
     used = models.BooleanField(default=False, blank=True)
 
-    def use(self):
+    def use(self, newcodes):
         if not self.used:
             self.used = True
             self.save()
             print(u"{0} is  marked as used".format(self.code))
+            description = u""
+            try:
+                pl = ProductLine.objects.get(code=self)
+                description = u"{0}".format(pl.label)
+            except ProductLine.DoesNotExist:
+                pass
+            try:
+                subPL = SubProductLine.objects.get(igor_or_sub_pl=self.code)
+                description = u"{0}".format(subPL.description)
+            except SubProductLine.DoesNotExist:
+                pass
+            date = unicode(datetime.datetime.now().date())
+            new3digitcode = [self.code, description, date]
+            newcodes.append(new3digitcode)
+
 
 
     def __unicode__(self):
         return(self.code)
 
 
-def get_unused_code(description=None):
+def get_unused_code():
     code = Code.objects.filter(used=False)[0]
     return(code)
