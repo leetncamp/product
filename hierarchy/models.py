@@ -159,11 +159,11 @@ class SubProductLine(models.Model):
 
 
         result = segmentDict.get(segment.code, "#")
-        result += businessunit.code
-        result += subbusinessunit.code
-        result += productlinegroup.code
+        result += str(businessunit.code)
+        result += str(subbusinessunit.code)
+        result += str(productlinegroup.code)
         lowersapresult = result
-        result += productline.code
+        result += str(productline.code.code)
         result += igorclass
         result += self.igor_or_sub_pl
 
@@ -198,7 +198,7 @@ class SubProductLine(models.Model):
         ws.cell(row=row, column=column).value = productlinegroup.code; column += 1
         ws.cell(row=row, column=column).value = productlinegroup.name; column += 1
         ws.cell(row=row, column=column).value = productline.label; column += 1
-        ws.cell(row=row, column=column).value = productline.code; column += 1
+        ws.cell(row=row, column=column).value = productline.code.code; column += 1
         ws.cell(row=row, column=column).value = productline.name; column += 1
         if self.igorclass:
             ws.cell(row=row, column=column).value = self.igorclass.name; column += 1

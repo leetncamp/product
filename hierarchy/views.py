@@ -101,6 +101,7 @@ def new(request):
                     return(render(request, "hierarchy/new.html", locals()))
 
             newProductLines = [] #List of ID's
+            subprods = []
             for rowDict in rowDictList:
                 productlinegroup = ProductLineGroup.objects.get(code=rowDict.get("Existing Product Line Group Code"))
                 code = get_unused_code()
@@ -118,7 +119,7 @@ def new(request):
                 and if not create a new one. """
 
                 try:
-                    productLine = ProductLine.objects.get(id__in=newProductLines, name = productlinename)
+                    productLine = ProductLine.objects.get(id__in=newProductLines, name__iexact=productlinename[:30])
                 except ProductLine.DoesNotExist:
                     code = get_unused_code()
                     productline = ProductLine(
@@ -134,7 +135,7 @@ def new(request):
                 subproductline = SubProductLine(
                     fproductline=productline,
                     igor_or_sub_pl=code.code,
-                    description=description,
+                    description=igorDescription,
                     igorclass=igoritemclass,
                     usage=usage
                 )
@@ -154,8 +155,8 @@ def new(request):
                 count += 1
             count = 2
 
-            for productline in newProductLines:
-                productline.excel_row(ws, count)
+            for subproduct in subprods:
+                subproduct.excel_row(ws, count)
                 count += 1
             wb.save(tmp)
             tmp.flush()
