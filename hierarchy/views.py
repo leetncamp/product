@@ -20,6 +20,7 @@ class ProductForm(forms.Form):
     product = forms.FileField()
 
 def new(request):
+    newcodes = []
     subproductform = SubProductForm()
     productform = ProductForm()
     if request.method == "POST":
