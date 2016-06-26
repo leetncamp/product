@@ -335,3 +335,32 @@ def aloha(request):
     else:
         data = {"message":"API"}
     return(JsonResponse(data, safe=False))
+
+
+class ReplaceCodesForm(forms.Form):
+    new_codes_xlsx_file = forms.FileField()
+
+def replacecodes(request):
+    replaceCodesForm = ReplaceCodesForm()
+    if request.method=="POST":
+        xlFile=request.FILES['new_codes_xlsx_file']
+        print("Loading workbook...")
+        wb = load_workbook(xlFile, data_only=True)
+        ws = wb.worksheets[1]
+        print("Processing codes...")
+        rownum = 1
+        for row in ws.rows[1:]:
+            codestr = str(row[2].value)
+            status = str(row[3].value).upper() == codestr
+            code, created = Code.objects.get_or_create(code=codestr)
+            initial = code.used
+            code.used = status
+            if code.used != initial or created:
+                code.save()
+                if created:
+                    print("created {0}".format(code))
+                print("updated {0} to {1}".format(code, code.used))
+    usedCount = Code.objects.filter(used=True).count()
+    unusedCount = Code.objects.filter(used=False).count()
+
+    return(render(request, "hierarchy/replacecodes.html", locals()))

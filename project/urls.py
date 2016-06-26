@@ -6,6 +6,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^uploadproducthierarchy$', import_product_hierarchy, name="import_product_hierarchy"),
     url(r'^new$', new, name="new"),
+    url(r'^replacecodes', replacecodes, name="replacecodes"),
     url(r'^$', new),
     url(r'^downloadproducthierarchy/{0,1}$', download_product_hierarchy, name="download_product_hierarchy" ),
     url(r'^aloha$', aloha, name="aloha"),
