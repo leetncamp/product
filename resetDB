@@ -3,6 +3,7 @@ import os
 import base64
 from pdb import set_trace as debug
 import urllib
+import glob
 
 
 #Reset the database
@@ -23,20 +24,23 @@ from django.core.urlresolvers import reverse
 from django.test import Client
 
 
+removeFiles = [
+    os.path.abspath("db.sqlite3"),
+    os.path.abspath(os.path.join("hierarchy", "migrations", "0*.py")),
+    os.path.abspath(os.path.join("hierarchy", "migrations", "*.pyc")),
+    ]
 
+for removeFile in removeFiles:
+    for filename in glob.glob(removeFile):
+        os.remove(filename)
 
-commands = """rm db.sqlite3
-rm hierarchy/migrations/0*.py
-rm hierarchy/migrations/*.pyc
-./manage.py makemigrations hierarchy
-./manage.py migrate""".split("\n")
+commands = """python manage.py makemigrations hierarchy
+python manage.py migrate
+python manage.py loaddata {0}
+python misc.py --codes""".format(os.path.join("hierarchy", "fixtures", "auth.json")).split("\n")
+print commands
+
 
 
 for command in commands:
     os.system(command)
-
-import pexpect
-
-os.system("./manage.py loaddata hierarchy/fixtures/auth.json")
-os.system("./misc.py --codes")
-print
