@@ -12,7 +12,7 @@ from django.core.wsgi import get_wsgi_application
 os.environ['DJANGO_SETTINGS_MODULE'] = 'project.settings'
 application = get_wsgi_application()
 from django import setup
-os.chdir(os.path.dirname(__file__))
+#os.chdir(os.path.dirname(__file__))
 setup()
 from hierarchy.models import *
 
