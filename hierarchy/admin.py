@@ -45,6 +45,7 @@ class SubProductLineAdmin(admin.ModelAdmin):
 class CodeAdmin(admin.ModelAdmin):
     search_fields = ["code"]
     list_filter = ['used']
+    list_display = ['id', 'used']
 
 
 # Now register the new UserAdmin...

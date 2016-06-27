@@ -9,7 +9,7 @@
   <meta name="description" content="Product Hierarchy">
 
   {% bootstrap_styles theme='cerulean' type='min.css' %}
-  <script src="/static/bower_components/jquery/dist/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/static/admin/js/vendor/jquery/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 	<link rel="stylesheet" href="/static/hierarchy/css/hierarchy.css" type="text/css" media="screen">
 
   {% bootstrap_script use_min=True %}
@@ -43,6 +43,7 @@
             <ul class="dropdown-menu">
               <li><a href="/uploadproducthierarchy">Upload new PH &hellip;</a></li>
               <li><a href="/downloadproducthierarchy">Download PH</a></li>
+              <li><a href="/replacecodes">Replace 3 digit codes</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="#">Compare PH's</a></li>
             </ul>
@@ -80,14 +81,14 @@
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
   </nav>
-	<div class="container">
-	    {% if messages %}
-	        {% for message in messages %}
-	            {% bootstrapalert message %}
-	        {% endfor %}
-	    {% endif %}
-	</div>
 
+  <div class="container">
+      {% if messages %}
+          {% for message in messages %}
+              {% bootstrapalert message %}
+          {% endfor %}
+      {% endif %}
+  </div>
 
 {% block body %}
 

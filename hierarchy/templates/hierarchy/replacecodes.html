@@ -1,0 +1,35 @@
+{% extends "hierarchy/base.html" %}
+{% load hierarchy_tags %}
+{% block head %}
+  <title>ReplaceCodes</title>
+
+{% endblock %}
+{% block body %}
+<div class="container">
+
+    {% editable_document "replacecodes" %}
+
+    <br />
+    <form method="POST"  enctype="multipart/form-data">
+      {% csrf_token %}
+      {{replaceCodesForm.as_p}}
+      <input type="hidden" name="select" value="subproduct" />
+      <br />
+      <button class="btn btn-primary">Submit</button>
+    </form>
+
+
+<p>
+  Used: {{usedCount}}<br />
+  Unused: {{unusedCount}}
+</p>
+
+
+
+
+  <br /><br /><br /><br /><br />
+  <br /><br /><br /><br /><br />
+
+</div>
+
+{% endblock %}

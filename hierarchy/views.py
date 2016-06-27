@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse
 import os, sys
 from django.contrib import messages
 from django.conf import settings
+import base64
 
 
 
@@ -20,7 +21,9 @@ class ProductForm(forms.Form):
     product = forms.FileField()
 
 def new(request):
+    newcodes = []
     subproductform = SubProductForm()
+    download = "false"
     productform = ProductForm()
     if request.method == "POST":
         if request.POST.get("select", "") == "subproduct":
@@ -48,10 +51,11 @@ def new(request):
                 subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
                     igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
                 if created:
-                    subproductline.save()
+                    msg = subproductline.save()
+                    if msg:
+                        messages.warning(request, msg)
                     subprods.append(subproductline)
-                    code.used = True
-                    code.save()
+                    code.use(newcodes)
 
 
             wb = Workbook()
@@ -68,11 +72,109 @@ def new(request):
                 count += 1
             wb.save(tmp)
             tmp.flush()
+            #tmp.seek(0)
+            #response = HttpResponse(content_type='application/xlsx')
+            #response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+            #response.write(tmp.read())
+            #return(response)
             tmp.seek(0)
-            response = HttpResponse(content_type='application/xlsx')
-            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
-            response.write(tmp.read())
-            return(response)
+            request.session['download'] = tmp.read()
+            download = "true"
+
+        elif request.POST.get('select') == "product":
+            wb = load_workbook(request.FILES['product'])
+            ws = wb.active
+            headers = [cell.value for cell in ws.rows[0] ]
+            prods=[]
+            rowDictList = []
+            for row in ws.rows[1:]:
+                rowDict = {}
+                for cellnum in range(len(row) + 1):
+                    try:
+                        cell = row[cellnum]
+                        rowDict[headers[cellnum]] = cell.value
+                    except IndexError:
+                        pass
+                rowDictList.append(rowDict)
+
+            """All product lines of the same name within a product line request should have the same Igor code, otherwise, abort."""
+            productLineGroupIgorDict = {}
+            for rowDict in rowDictList:
+                productLineGroupIgorDict[rowDict["Product Line Name"]] = productLineGroupIgorDict.get(rowDict["Product Line Name"], []) + [rowDict["Igor Item Class"]]
+            for plName, igorCodeList in productLineGroupIgorDict.iteritems():
+                if len(set(igorCodeList)) > 1:
+                    newClass = "active"
+                    messages.warning(request, u"Igor Item Classes differ for identical Product Line Name: {0}. Aborting...".format(plName))
+                    return(render(request, "hierarchy/new.html", locals()))
+
+            newProductLines = [] #List of ID's
+            subprods = []
+            for rowDict in rowDictList:
+                productlinegroup = ProductLineGroup.objects.get(code=rowDict.get("Existing Product Line Group Code"))
+                code = get_unused_code()
+                igorDescription = rowDict.get("Igor / Sub PL Description", "")
+                usage = rowDict.get("Usage")
+                productlinename = rowDict.get("Product Line Name")
+                if usage:
+                    usage = Usage.objects.get(name=usage)
+                igoritemclass = rowDict.get("Igor Item Class", None)
+                if igoritemclass:
+                    igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
+
+                """Product line names are not unique in the database, but we don't want to create multiple product lines with the same
+                description within a single new product line request. Check if we've created one in this new productline request,
+                and if not create a new one. """
+
+                try:
+                    productLine = ProductLine.objects.get(id__in=newProductLines, name__iexact=productlinename[:30])
+                except ProductLine.DoesNotExist:
+                    code = get_unused_code()
+                    productline = ProductLine(
+                        code = code,
+                        name = productlinename,
+                        fproductlinegroup = productlinegroup
+                    )
+                    productline.save()
+                    code.use(newcodes)
+                    newProductLines.append(productline.id)
+                #Now we have a new productline
+                code = get_unused_code()
+                subproductline = SubProductLine(
+                    fproductline=productline,
+                    igor_or_sub_pl=code.code,
+                    description=igorDescription,
+                    igorclass=igoritemclass,
+                    usage=usage
+                )
+                msg = subproductline.save()
+                if msg:
+                    messages.warning(request, msg)
+                subprods.append(subproductline)
+                code.use(newcodes)
+
+
+            wb = Workbook()
+            ws = wb.active
+            count=1
+            tmp = NamedTemporaryFile(suffix=".xlsx")
+            for header in bigheaders:
+                ws.cell(row=1, column=count).value= header
+                count += 1
+            count = 2
+
+            for subproduct in subprods:
+                subproduct.excel_row(ws, count)
+                count += 1
+            wb.save(tmp)
+            tmp.flush()
+            #tmp.seek(0)
+            #response = HttpResponse(content_type='application/xlsx')
+            #response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
+            #response.write(tmp.read())
+            #return(response)
+            tmp.seek(0)
+            request.session['download'] = base64.b64encode(tmp.read())
+
     elif request.method == "GET":
         download = request.GET.get("download")
         if download in ["sub-product-template.xlsx", "product-template.xlsx"]:
@@ -81,6 +183,13 @@ def new(request):
             response['Content-Disposition'] = 'attachment; filename="{0}"'.format(download)
             spreadsheet = open(filepath, 'rb').read()
             response.write(spreadsheet)
+            return(response)
+        retrieve = "retrieve" in request.GET.keys()
+        if retrieve:
+            xlsx = base64.b64decode(request.session['download'])
+            response = HttpResponse(content_type='application/xlsx')
+            response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename("productcodes.xlsx"))
+            response.write(xlsx)
             return(response)
 
     newClass = "active"
@@ -157,7 +266,7 @@ def import_product_hierarchy(request):
                 except Exception as e:
                     print traceback.format_exc()
                     print("Error on row {0}".format(row[0].row))
-                    debug()
+                    stop()
             messages.success(request, "Product Hierarchy Loaded")
 
 
@@ -226,3 +335,32 @@ def aloha(request):
     else:
         data = {"message":"API"}
     return(JsonResponse(data, safe=False))
+
+
+class ReplaceCodesForm(forms.Form):
+    new_codes_xlsx_file = forms.FileField()
+
+def replacecodes(request):
+    replaceCodesForm = ReplaceCodesForm()
+    if request.method=="POST":
+        xlFile=request.FILES['new_codes_xlsx_file']
+        print("Loading workbook...")
+        wb = load_workbook(xlFile, data_only=True)
+        ws = wb.worksheets[1]
+        print("Processing codes...")
+        rownum = 1
+        for row in ws.rows[1:]:
+            codestr = str(row[2].value)
+            status = str(row[3].value).upper() == codestr
+            code, created = Code.objects.get_or_create(code=codestr)
+            initial = code.used
+            code.used = status
+            if code.used != initial or created:
+                code.save()
+                if created:
+                    print("created {0}".format(code))
+                print("updated {0} to {1}".format(code, code.used))
+    usedCount = Code.objects.filter(used=True).count()
+    unusedCount = Code.objects.filter(used=False).count()
+
+    return(render(request, "hierarchy/replacecodes.html", locals()))
