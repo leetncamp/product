@@ -1,5 +1,6 @@
 Django==1.9.6
 PyInstaller==3.2
+beautifulsoup4==4.4.1
 django-bootstrap==0.2.4
 django-bootstrap-themes==3.3.6
 et-xmlfile==1.0.1
