@@ -165,7 +165,7 @@ class SubProductLine(models.Model):
         result += str(subbusinessunit.code)
         result += str(productlinegroup.code)
         lowersapresult = result
-        result += str(productline.code.code)
+        result += str(productline.code)
         result += igorclass
         result += self.igor_or_sub_pl
 
