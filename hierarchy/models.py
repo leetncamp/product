@@ -200,7 +200,6 @@ class SubProductLine(models.Model):
         ws.cell(row=row, column=column).value = productlinegroup.code; column += 1
         ws.cell(row=row, column=column).value = productlinegroup.name; column += 1
         ws.cell(row=row, column=column).value = productline.label; column += 1
-        debug()
         ws.cell(row=row, column=column).value = productline.code; column += 1
         ws.cell(row=row, column=column).value = productline.name; column += 1
         if self.igorclass:
