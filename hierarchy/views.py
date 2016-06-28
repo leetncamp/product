@@ -380,7 +380,6 @@ def update_code(request):
                 output = subprocess.Popen(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
             elif update == "software":
                 output = subprocess.Popen(['python', 'update-software.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-            time.sleep(3) #Give time for the server to restart
         except Exception as e:
             output = ("", str(e))
     return( render(request, 'hierarchy/update_code.html', locals() ))
