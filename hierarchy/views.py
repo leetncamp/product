@@ -78,7 +78,7 @@ def new(request):
             #response.write(tmp.read())
             #return(response)
             tmp.seek(0)
-            request.session['download'] = tmp.read()
+            request.session['download'] = base64.b64encode(tmp.read())
             download = "true"
 
         elif request.POST.get('select') == "product":
