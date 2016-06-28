@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.conf import settings
 import base64
 import subprocess
-
+import time
 
 
 class SubProductForm(forms.Form):
@@ -380,6 +380,7 @@ def update_code(request):
                 output = subprocess.Popen(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
             elif update == "software":
                 output = subprocess.Popen(['python', 'update-software.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            time.sleep(5) #Give time for the server to restart
         except Exception as e:
             output = ("", str(e))
     return( render(request, 'hierarchy/update_code.html', locals() ))
