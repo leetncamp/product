@@ -14,20 +14,41 @@ td {
     {% editable_document "replacecodes" %}
 
     <br />
-    <form method="POST">
-      {% csrf_token %}
-      <input type="hidden" name="update" value="code" />
-      <br />
-      <button class="btn btn-primary">Update python code</button>
-    </form>
-<p>
-  {{output.0}}
-</p>
-<p>
-  {{output.1}}
-</p>
+    <div class="col-sm-4 pull-right">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="update" value="software" />
+        <br />
+        <button class="btn btn-primary pull-right" title="Update python packages; warn if newer version of python is available.">Update Software</button>
+      </form>
+    </div>
+    <div class="col-sm-4">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="update" value="code" />
+        <br />
+        <button class="btn btn-primary" title="Update Django code from git repository.">Update Python Code</button>
+      </form>
+    </div>
 
-  <br /><br /><br /><br /><br />
+
+
+  <div class="container">
+    <br /><br /><br />
+    <br /><br /><br />
+    {% if output.0 %}
+      <pre>
+        {{output.0}}
+      </pre>
+    {% endif %}
+    {% if output.1 %}
+      <pre>
+        {{output.1}}
+      </pre>
+    {% endif %}
+
+  </div>
+
   <br /><br /><br /><br /><br />
 
 </div>

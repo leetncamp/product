@@ -374,5 +374,9 @@ def replacecodes(request):
 
 def update_code(request):
     if request.method == "POST":
-        output = subprocess.Popen(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        update = request.POST.get("update")
+        if update == "code":
+            output = subprocess.Popen(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        elif update == "software":
+            output = subprocess.Popen(['python', 'update-software.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     return( render(request, 'hierarchy/update_code.html', locals() ))
