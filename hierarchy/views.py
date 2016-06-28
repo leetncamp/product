@@ -340,6 +340,16 @@ def aloha(request):
 class ReplaceCodesForm(forms.Form):
     new_codes_xlsx_file = forms.FileField()
 
+
+def coderow(row):
+    code = str(row[2].value).upper()
+    result = {
+        "code" : code,
+        "status" : str(row[3].value).upper() == code
+    }
+    return(result)
+
+
 def replacecodes(request):
     replaceCodesForm = ReplaceCodesForm()
     if request.method=="POST":
@@ -349,17 +359,13 @@ def replacecodes(request):
         ws = wb.worksheets[1]
         print("Processing codes...")
         rownum = 1
+        print("Singleprocessing codes")
+        coderows = []
         for row in ws.rows[1:]:
-            codestr = str(row[2].value)
-            status = str(row[3].value).upper() == codestr
-            code, created = Code.objects.get_or_create(code=codestr)
-            initial = code.used
-            code.used = status
-            if code.used != initial or created:
-                code.save()
-                if created:
-                    print("created {0}".format(code))
-                print("updated {0} to {1}".format(code, code.used))
+            coderows.append(coderow(row))
+        debug()
+        deleteResults = Code.objects.all().delete()
+        Code.objects.bulk_create(coderows)
     usedCount = Code.objects.filter(used=True).count()
     unusedCount = Code.objects.filter(used=False).count()
 
