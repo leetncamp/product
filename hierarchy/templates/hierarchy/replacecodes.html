@@ -2,7 +2,11 @@
 {% load hierarchy_tags %}
 {% block head %}
   <title>ReplaceCodes</title>
-
+<style>
+td {
+  padding:4px;
+}
+</style>
 {% endblock %}
 {% block body %}
 <div class="container">
@@ -18,14 +22,37 @@
       <button class="btn btn-primary">Submit</button>
     </form>
 
-
-<p>
-  Used: {{usedCount}}<br />
-  Unused: {{unusedCount}}
-</p>
-
-
-
+{% if usedCount %}
+  <br />
+  <div style="width:70px">
+    <table class="table table-condensed">
+      <tr>
+        <td>
+          Used
+        </td>
+        <td>
+          {{usedCount}}
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Unused
+        </td>
+        <td>
+          {{unusedCount}}
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Total</strong>
+        </td>
+        <td>
+          <strong>{{total}}</strong>
+        </td>
+      </tr>
+    </table>
+  </div>
+{% endif %}
 
   <br /><br /><br /><br /><br />
   <br /><br /><br /><br /><br />

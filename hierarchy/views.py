@@ -343,30 +343,30 @@ class ReplaceCodesForm(forms.Form):
 
 def coderow(row):
     code = str(row[2].value).upper()
-    result = {
-        "code" : code,
-        "status" : str(row[3].value).upper() == code
-    }
-    return(result)
+    obj = Code(code=code, used=str(row[3].value).upper() == code)
+    return(obj)
 
 
 def replacecodes(request):
     replaceCodesForm = ReplaceCodesForm()
     if request.method=="POST":
-        xlFile=request.FILES['new_codes_xlsx_file']
+        try:
+            xlFile=request.FILES['new_codes_xlsx_file']
+        except:
+            return(render(request, "hierarchy/replacecodes.html", locals()))
+
         print("Loading workbook...")
         wb = load_workbook(xlFile, data_only=True)
         ws = wb.worksheets[1]
         print("Processing codes...")
-        rownum = 1
-        print("Singleprocessing codes")
         coderows = []
         for row in ws.rows[1:]:
             coderows.append(coderow(row))
-        debug()
+        print("Updating database...")
         deleteResults = Code.objects.all().delete()
         Code.objects.bulk_create(coderows)
-    usedCount = Code.objects.filter(used=True).count()
-    unusedCount = Code.objects.filter(used=False).count()
+        usedCount = Code.objects.filter(used=True).count()
+        unusedCount = Code.objects.filter(used=False).count()
+        total = Code.objects.all().count()
 
     return(render(request, "hierarchy/replacecodes.html", locals()))
