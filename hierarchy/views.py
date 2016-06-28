@@ -11,6 +11,7 @@ import os, sys
 from django.contrib import messages
 from django.conf import settings
 import base64
+import subprocess
 
 
 
@@ -370,3 +371,8 @@ def replacecodes(request):
         total = Code.objects.all().count()
 
     return(render(request, "hierarchy/replacecodes.html", locals()))
+
+def update_code(request):
+    if request.method == "POST":
+        output = subprocess.Popen(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    return( render(request, 'hierarchy/update_code.html', locals() ))

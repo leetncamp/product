@@ -1,0 +1,35 @@
+{% extends "hierarchy/base.html" %}
+{% load hierarchy_tags %}
+{% block head %}
+  <title>Update Code</title>
+<style>
+td {
+  padding:4px;
+}
+</style>
+{% endblock %}
+{% block body %}
+<div class="container">
+
+    {% editable_document "replacecodes" %}
+
+    <br />
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="update" value="code" />
+      <br />
+      <button class="btn btn-primary">Update python code</button>
+    </form>
+<p>
+  {{output.0}}
+</p>
+<p>
+  {{output.1}}
+</p>
+
+  <br /><br /><br /><br /><br />
+  <br /><br /><br /><br /><br />
+
+</div>
+
+{% endblock %}
