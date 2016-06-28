@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os
-import sys
+import os, sys
 from pdb import set_trace as debug
 stop = debug
 
