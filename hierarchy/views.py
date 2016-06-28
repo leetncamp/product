@@ -130,7 +130,7 @@ def new(request):
                 except ProductLine.DoesNotExist:
                     code = get_unused_code()
                     productline = ProductLine(
-                        code = code,
+                        code = code.code,
                         name = productlinename,
                         fproductlinegroup = productlinegroup
                     )
