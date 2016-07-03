@@ -22,7 +22,7 @@ class ProductForm(forms.Form):
     product = forms.FileField()
 
 def new(request):
-    newcodes = []
+    newcodes = {}
     subproductform = SubProductForm()
     download = "false"
     productform = ProductForm()

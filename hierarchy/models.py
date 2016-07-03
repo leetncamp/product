@@ -236,7 +236,7 @@ class Code(models.Model):
             description = u""
             try:
                 pl = ProductLine.objects.get(code=self)
-                description = u"{0}".format(pl.label)
+                description = u"{0}".format(pl.name)
             except ProductLine.DoesNotExist:
                 pass
             try:
