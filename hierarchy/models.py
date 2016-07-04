@@ -234,18 +234,21 @@ class Code(models.Model):
             self.save()
             print(u"{0} is  marked as used".format(self.code))
             description = u""
+            kind = "unknown"
             try:
                 pl = ProductLine.objects.get(code=self)
                 description = u"{0}".format(pl.name)
+                kind = "PL"
             except ProductLine.DoesNotExist:
                 pass
             try:
                 subPL = SubProductLine.objects.get(igor_or_sub_pl=self.code)
                 description = u"{0}".format(subPL.description)
+                kind = "SubPL"
             except SubProductLine.DoesNotExist:
                 pass
             date = unicode(datetime.datetime.now().date())
-            new3digitcode = [self.code, description, date]
+            new3digitcode = [self.code, description, kind, date]
             newcodes.append(new3digitcode)
 
 

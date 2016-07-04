@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django import forms
 from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font
 from hierarchy.models import *
 import traceback
 from django.db import IntegrityError
@@ -22,7 +23,7 @@ class ProductForm(forms.Form):
     product = forms.FileField()
 
 def new(request):
-    newcodes = {}
+    newcodes = []
     subproductform = SubProductForm()
     download = "false"
     productform = ProductForm()
@@ -84,7 +85,7 @@ def new(request):
 
         elif request.POST.get('select') == "product":
             wb = load_workbook(request.FILES['product'])
-            ws = wb.active
+            ws = wb.get_sheet_by_name(name = 'Product_Hierarchy')
             headers = [cell.value for cell in ws.rows[0] ]
             prods=[]
             rowDictList = []
@@ -156,23 +157,43 @@ def new(request):
 
             wb = Workbook()
             ws = wb.active
+            ws.title = "Product_Hierarchy"
+            wsProductCodes = wb.create_sheet()
+            wsProductCodes.title = "Product_Codes"
             count=1
             tmp = NamedTemporaryFile(suffix=".xlsx")
             for header in bigheaders:
                 ws.cell(row=1, column=count).value= header
+                ws.cell(row=1, column=count).font = Font(bold=True)
                 count += 1
             count = 2
 
             for subproduct in subprods:
                 subproduct.excel_row(ws, count)
                 count += 1
-            wb.save(tmp)
-            tmp.flush()
+
             #tmp.seek(0)
             #response = HttpResponse(content_type='application/xlsx')
             #response['Content-Disposition'] = 'attachment; filename="{0}"'.format(os.path.basename(tmp.name))
             #response.write(tmp.read())
             #return(response)
+            tmp.seek(0)
+            #Write product codes into a 2nd sheet
+            column = 1
+            for header in ["Code", "Description", "Type", "Date"]:
+                wsProductCodes.cell(row=1, column=column).value = header
+                wsProductCodes.cell(row=1, column=column).font = Font(bold=True)
+                column += 1
+
+            row = 2
+            for newcodeList in newcodes:
+                column = 1
+                for value in newcodeList:
+                    wsProductCodes.cell(row=row, column=column).value = value
+                    column += 1
+                row += 1
+            wb.save(tmp)
+            tmp.flush()
             tmp.seek(0)
             request.session['download'] = base64.b64encode(tmp.read())
 
@@ -206,8 +227,7 @@ def import_product_hierarchy(request):
         if request.FILES:
             print("Loading spreadsheet")
             wb = load_workbook(request.FILES['file'])
-            #Get the first sheet
-            ws = wb.active
+            ws = wb.get_sheet_by_name(name = 'Product_Hierarchy')
             headers = [cell.value for cell in ws.rows[0] ]
             print("Parsing rows")
             for row in ws.rows[1:]:
@@ -281,6 +301,7 @@ def download_product_hierarchy(request):
     column = 1
     for header in bigheaders:
         ws.cell(row=1, column=column).value = header
+        ws.cell(row=1, column=count).font = Font(bold=True)
         column += 1
     tmp = NamedTemporaryFile(suffix=".xlsx")
     row = 2
