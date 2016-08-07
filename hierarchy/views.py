@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.core.urlresolvers import reverse
 from django import forms
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
@@ -14,7 +15,8 @@ from django.conf import settings
 import base64
 import subprocess
 import time
-
+import shutil
+import glob
 
 class SubProductForm(forms.Form):
     subproduct = forms.FileField()
@@ -404,3 +406,15 @@ def update_code(request):
         except Exception as e:
             output = ("", str(e))
     return( render(request, 'hierarchy/update_code.html', locals() ))
+
+def reset_database(request):
+    dbFile = os.path.join(settings.BASE_DIR, "db.sqlite3")
+    removeFiles = [ dbFile]
+
+    for removeFile in removeFiles:
+        for filename in glob.glob(removeFile):
+            os.remove(filename)
+    fromFile = dbFile + ".new"
+    shutil.copy(fromFile, dbFile)
+    messages.success(request, u"Database reset. Upload new Product Hierarchy and new 3 digit codes.")
+    return(redirect(reverse("replacecodes")))
