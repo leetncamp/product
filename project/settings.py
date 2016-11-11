@@ -45,7 +45,7 @@ TEMPLATES = [
     },
 ]
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['django.lee.com']
 
 
 

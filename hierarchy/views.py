@@ -33,33 +33,43 @@ def new(request):
         if request.POST.get("select", "") == "subproduct":
             wb = load_workbook(request.FILES['subproduct'])
             ws = wb.active
-            headers = [cell.value for cell in ws.rows[0] ]
+            headers = [cell.value for cell in ws.rows.next() ]
             subprods=[]
-            for row in ws.rows[1:]:
-                rowDict = {}
-                for cellnum in range(len(row) + 1):
+            for row in ws.iter_rows(row_offset=1):
+                if row[0].value:
+                    rowDict = {}
+                    for cellnum in range(len(row) + 1):
+                        try:
+                            cell = row[cellnum]
+                            rowDict[headers[cellnum]] = cell.value
+                        except IndexError:
+                            pass
                     try:
-                        cell = row[cellnum]
-                        rowDict[headers[cellnum]] = cell.value
-                    except IndexError:
-                        pass
-                productline = ProductLine.objects.get(code=rowDict.get("Existing Product Line Code"))
-                code = get_unused_code()
-                description = rowDict.get("Igor / Sub PL Description", "")
-                usage = rowDict.get("Usage")
-                if usage:
-                    usage = Usage.objects.get(name=usage)
-                igoritemclass = rowDict.get("Igor Item Class", None)
-                if igoritemclass:
-                    igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
-                subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
-                    igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
-                if created:
-                    msg = subproductline.save()
-                    if msg:
-                        messages.warning(request, msg)
-                    subprods.append(subproductline)
-                    code.use(newcodes)
+                        productline = ProductLine.objects.get(code=rowDict.get("Existing Product Line Code"))
+                    except Exception as e:
+                        print(u"Could not find ProductLine '{0}' at row {1}".format(rowDict.get("Existing Product Line Code"), row[0].row))
+                        debug()
+
+                    code = get_unused_code()
+                    description = rowDict.get("Igor / Sub PL Description", "")
+                    usage = rowDict.get("Usage")
+                    if usage:
+                        usage = Usage.objects.get(name=usage)
+                    igoritemclass = rowDict.get("Igor Item Class", None)
+                    if igoritemclass:
+                        igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
+                    if len(description) >  30:
+                        print(u"New Subproduct Line '{0}' exceed 30 characters: {0}. Dropping into the debugger. You decide what to do.".format(description, len(description)))
+                        debug()
+
+                    subproductline, created = SubProductLine.objects.get_or_create(fproductline=productline,
+                        igor_or_sub_pl=code.code, description=description, igorclass=igoritemclass, usage=usage)
+                    if created:
+                        msg = subproductline.save()
+                        if msg:
+                            messages.warning(request, msg)
+                        subprods.append(subproductline)
+                        code.use(newcodes)
 
 
             wb = Workbook()
@@ -88,18 +98,21 @@ def new(request):
         elif request.POST.get('select') == "product":
             wb = load_workbook(request.FILES['product'])
             ws = wb.get_sheet_by_name(name = 'Product_Hierarchy')
-            headers = [cell.value for cell in ws.rows[0] ]
+            headers = [cell.value for cell in ws.rows.next() ]
             prods=[]
             rowDictList = []
-            for row in ws.rows[1:]:
-                rowDict = {}
-                for cellnum in range(len(row) + 1):
-                    try:
-                        cell = row[cellnum]
-                        rowDict[headers[cellnum]] = cell.value
-                    except IndexError:
-                        pass
-                rowDictList.append(rowDict)
+
+            for row in ws.iter_rows(row_offset=1):
+                if row[0].value:
+                    rowDict = {}
+                    for cellnum in range(len(row) + 1):
+                        try:
+                            cell = row[cellnum]
+                            rowDict[headers[cellnum]] = cell.value
+                        except IndexError:
+                            pass
+                    rowDictList.append(rowDict)
+
 
             """All product lines of the same name within a product line request should have the same Igor code, otherwise, abort."""
             productLineGroupIgorDict = {}
@@ -113,14 +126,25 @@ def new(request):
 
             newProductLines = [] #List of ID's
             subprods = []
+
             for rowDict in rowDictList:
-                productlinegroup = ProductLineGroup.objects.get(code=rowDict.get("Existing Product Line Group Code"))
+                try:
+                    productlinegroup = ProductLineGroup.objects.get(code__iexact=rowDict.get("Existing Product Line Group Code"))
+                except Exception as e:
+                    print e
+                    print(u"Could not find Product Line Group Code '{0}'".format(rowDict.get("Existing Product Line Group Code")))
+                    debug()
+
                 code = get_unused_code()
                 igorDescription = rowDict.get("Igor / Sub PL Description", "")
                 usage = rowDict.get("Usage")
                 productlinename = rowDict.get("Product Line Name")
                 if usage:
-                    usage = Usage.objects.get(name=usage)
+                    try:
+                        usage = Usage.objects.get(name__iexact=usage)
+                    except Exception as e:
+                        debug()
+                        print(u"Usage not found '{0}' at row {1}".format(usage, row[0].row))
                 igoritemclass = rowDict.get("Igor Item Class", None)
                 if igoritemclass:
                     igoritemclass = IgorItemClass.objects.get(name=igoritemclass)
@@ -128,6 +152,9 @@ def new(request):
                 """Product line names are not unique in the database, but we don't want to create multiple product lines with the same
                 description within a single new product line request. Check if we've created one in this new productline request,
                 and if not create a new one. """
+
+                if len(productlinename) > 30:
+                    print(u"Product Line Name '{0}' exceed 30 characters: {1} dropping into the debugger. The database will trucate the name if you contine. Abort with ^c".format(productlinename, len(productlinename)))
 
                 try:
                     productLine = ProductLine.objects.get(id__in=newProductLines, name__iexact=productlinename[:30])
@@ -230,66 +257,75 @@ def import_product_hierarchy(request):
             print("Loading spreadsheet")
             wb = load_workbook(request.FILES['file'])
             ws = wb.get_sheet_by_name(name = 'Product_Hierarchy')
-            headers = [cell.value for cell in ws.rows[0] ]
+            headers = [cell.value for cell in ws.rows.next() ]
             print("Parsing rows")
-            for row in ws.rows[1:]:
-                try:
-                    rowDict = {}
-                    for cellnum in range(len(row) + 1):
-                        try:
-                            cell = row[cellnum]
-                            rowDict[headers[cellnum]] = cell.value
-                        except IndexError:
-                            pass
-                    segment, created = Segment.objects.get_or_create(name=rowDict["Segment Name"], code=rowDict['Segment Code'])
-                    if created:
-                        segment.save()
-                    division, created = Division.objects.get_or_create(name=rowDict["Division Name"], code=rowDict['Division Code'], fsegment=segment)
-                    if created:
-                        division.save()
-                    businessunit, created = BusinessUnit.objects.get_or_create(name=rowDict["Business Unit Name"], code=rowDict['Business Unit Code'], fdivision = division)
-                    if created:
-                        businessunit.save()
-                    subbusinessunit, created = SubBusinessUnit.objects.get_or_create(name=rowDict["Sub-Business Unit Name"], code=rowDict['Sub-Business Unit Code'], fbusinessunit = businessunit)
-                    if created:
-                        subbusinessunit.save()
-                    productlinegroup, created = ProductLineGroup.objects.get_or_create(name=rowDict["Product Line Group Name"], code=rowDict['Product Line Group Code'], fsubbusinessunit = subbusinessunit)
-                    if created:
-                        productlinegroup.save()
-                    productline, created = ProductLine.objects.get_or_create(name=rowDict["Product Line Name"], code=rowDict['Product Line Code'], fproductlinegroup = productlinegroup)
-                    if created:
-                        productline.save()
-                    usage, created = Usage.objects.get_or_create(name=rowDict["Usage"])
-                    if created:
-                        usage.save()
 
-                    igorclassStr = rowDict.get("Igor Item Class")
-                    if igorclassStr:
-                        igorclass = IgorItemClass.objects.get(name=igorclassStr)
-                    else:
-                        igorclass = None
-
-                    usageStr = rowDict.get("Usage")
-                    if usageStr:
-                        usage = Usage.objects.get(name=usageStr)
-                    else:
-                        usage = None
-
-                    if rowDict["Igor or Sub PL"]:
-                        subproductline, created = SubProductLine.objects.get_or_create(igor_or_sub_pl=rowDict["Igor or Sub PL"], \
-                            description=rowDict['Igor / Sub PL Description'], fproductline=productline, usage=usage, igorclass=igorclass)
+            for row in ws.iter_rows(row_offset=1):
+                if row[1].value: #if this row isn't empty
+                    try:
+                        rowDict = {}
+                        for cellnum in range(len(row) + 1):
+                            try:
+                                cell = row[cellnum]
+                                rowDict[headers[cellnum]] = cell.value
+                            except IndexError:
+                                pass
+                        segment, created = Segment.objects.get_or_create(name=rowDict["Segment Name"], code=rowDict['Segment Code'])
                         if created:
-                            subproductline.save()
-                    else:
-                        subproductline = None
+                            segment.save()
+                        division, created = Division.objects.get_or_create(name=rowDict["Division Name"], code=rowDict['Division Code'], fsegment=segment)
+                        if created:
+                            division.save()
+                        businessunit, created = BusinessUnit.objects.get_or_create(name=rowDict["Business Unit Name"], code=rowDict['Business Unit Code'], fdivision = division)
+                        if created:
+                            businessunit.save()
+                        subbusinessunit, created = SubBusinessUnit.objects.get_or_create(name=rowDict["Sub-Business Unit Name"], code=rowDict['Sub-Business Unit Code'], fbusinessunit = businessunit)
+                        if created:
+                            subbusinessunit.save()
+                        name = rowDict["Product Line Group Name"]
+                        if len(name) > 30:
+                            print(u"Warning: Product Line Group Name '{0}' exceeds 30 characters.".format(name))
+                        productlinegroup, created = ProductLineGroup.objects.get_or_create(name=name, code=rowDict['Product Line Group Code'], fsubbusinessunit = subbusinessunit)
+                        if created:
+                            productlinegroup.save()
+                        productline, created = ProductLine.objects.get_or_create(name=rowDict["Product Line Name"], code=rowDict['Product Line Code'], fproductlinegroup = productlinegroup)
+                        if created:
+                            productline.save()
+                        usage, created = Usage.objects.get_or_create(name=rowDict["Usage"])
+                        if created:
+                            usage.save()
 
-                    print("."),
-                    sys.stdout.flush()
+                        igorclassStr = rowDict.get("Igor Item Class")
+                        if igorclassStr:
+                            try:
+                                igorclass = IgorItemClass.objects.get(name=igorclassStr)
+                            except Exception as e:
+                                print(u"IgorItemClass missing '{0}'".format(igorclassStr))
+                                debug()
+                        else:
+                            igorclass = None
 
-                except Exception as e:
-                    print traceback.format_exc()
-                    print("Error on row {0}".format(row[0].row))
-                    stop()
+                        usageStr = rowDict.get("Usage")
+                        if usageStr:
+                            usage = Usage.objects.get(name=usageStr)
+                        else:
+                            usage = None
+
+                        if rowDict["Igor or Sub PL"]:
+                            subproductline, created = SubProductLine.objects.get_or_create(igor_or_sub_pl=rowDict["Igor or Sub PL"], \
+                                description=rowDict['Igor / Sub PL Description'], fproductline=productline, usage=usage, igorclass=igorclass)
+                            if created:
+                                subproductline.save()
+                        else:
+                            subproductline = None
+
+                        print("."),
+                        sys.stdout.flush()
+
+                    except Exception as e:
+                        print traceback.format_exc()
+                        print("Error on row {0}".format(row[0].row))
+                        stop()
             messages.success(request, "Product Hierarchy Loaded")
 
 
@@ -366,8 +402,17 @@ class ReplaceCodesForm(forms.Form):
 
 
 def coderow(row):
-    code = str(row[2].value).upper()
-    obj = Code(code=code, used=str(row[3].value).upper() == code)
+    try:
+        str(row[2].value)
+    except:
+        print(u"This entry in col 2 contains unicode: '{0}'".format(row[2].value))
+    try:
+        str(row[3].value)
+    except:
+        print(u"This entry in col 2 contains unicode: '{0}'".format(row[3].value))
+
+    code = unicode(row[2].value).upper()
+    obj = Code(code=code, used=unicode(row[3].value).upper() == code)
     return(obj)
 
 
@@ -381,10 +426,12 @@ def replacecodes(request):
 
         print("Loading workbook...")
         wb = load_workbook(xlFile, data_only=True)
-        ws = wb.worksheets[1]
+
+        ws = wb.get_sheet_by_name(name = 'available codes')
         print("Processing codes...")
         coderows = []
-        for row in ws.rows[1:]:
+        header_row = ws.rows.next()
+        for row in ws.iter_rows(row_offset=1):
             coderows.append(coderow(row))
         print("Updating database...")
         deleteResults = Code.objects.all().delete()

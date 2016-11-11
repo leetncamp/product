@@ -13,7 +13,7 @@ class Parent(models.Model):
     modified = models.DateTimeField(auto_now=True)
     code = models.CharField(max_length=3)
     label = models.CharField(max_length=64, blank=True, default="")
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=38)  #This should be 30 but there are existing entries in Master PH that are this long.
 
     def __unicode__(self):
         return(u"{0}- {1}".format(self.code, self.name))
@@ -23,11 +23,12 @@ class Parent(models.Model):
         self.name = unicode(self.name).upper()
         if len(self.name) > 30:
             msg = u"Name too long: {0}".format(self.name)
-            self.name = self.name[:30]
+            self.name = self.name[:38]
         if not self.label:
             self.label = u"{0}- {1}".format(self.code, self.name)
         super(Parent, self).save(*args, **kwargs)
         return(msg)
+
 
 class Segment(Parent):
     pass
@@ -43,6 +44,7 @@ class SubBusinessUnit(Parent):
 
 class ProductLineGroup(Parent):
     fsubbusinessunit = models.ForeignKey(SubBusinessUnit)
+
 
 class ProductLine(Parent):
     fproductlinegroup = models.ForeignKey(ProductLineGroup)
